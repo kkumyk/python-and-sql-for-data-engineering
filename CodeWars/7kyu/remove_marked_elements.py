@@ -15,13 +15,10 @@ print(List.remove_(object, [1, 1, 2, 3, 1, 2, 3, 4], [1, 3]))
 
 
 # def remove_marked(integer_list, values_list):
-    
 #     result = []
-    
 #     for integer in integer_list:
 #         if integer not in values_list:
 #             result.append(integer)
-        
 #     return result
 
 # output = remove_marked([1, 1, 2, 3, 1, 2, 3, 4], [1, 3])
