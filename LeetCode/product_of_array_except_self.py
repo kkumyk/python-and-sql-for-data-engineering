@@ -13,7 +13,7 @@ class Solution(object):
         for i in range(len(nums) -1, -1, -1):
             res[i] *= postfix
             postfix *= nums[i]
-        return res # [1, 1, 2, 6]
+        return res # [24, 12, 8, 6]
 
 
 print(Solution.productExceptSelf(object, [1,2,3,4]))
