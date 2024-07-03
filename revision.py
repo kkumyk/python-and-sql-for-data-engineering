@@ -1,3 +1,16 @@
+
+
+
+
+
+
+# import re
+
+# def sum_of_integers_in_string(s):
+#     return sum(list(map(int, re.findall('\d+',s))))
+# print(sum_of_integers_in_string("The30quick20brown10f0x1203jumps914ov3r1349the102l4zy dog")) # 3635
+
+
 '''
 write a function to calculate the sum of the numerical values in a nested list:
 sum_nested([1, [2, [3, [4]]]]) -> 10
