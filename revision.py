@@ -2,6 +2,24 @@
 
 
 
+'''
+- split the string into pairs of two characters
+- if the string contains an odd number of characters then it should replace the missing second character of the final pair with an underscore ('_').
+
+* 'abc' =>  ['ab', 'c_']
+* 'abcdef' => ['ab', 'cd', 'ef']
+'''
+
+# def solution(s):
+    
+#     if len(s) == 0:
+#         return []
+#     elif len(s) == 1:
+#         return [s + "_"]
+#     else:
+#         return [s[:2]] + solution(s[2:])
+         
+# print(solution('abcfs'))
 
 
 # import re

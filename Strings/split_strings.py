@@ -29,7 +29,13 @@ def solution(s):
     
         # Previous version:
         # s_even = list(s)[:-1]
-        # end_char =list(s).pop()+"_"
+        # end_char =list(s).pop()+"_"    if len(s) == 0:
+        return []
+    elif len(s) == 1:
+        return [s + "_"]
+    else:
+        return [s[:2]] + solution(s[2:])
+
         # # the solution  function expects a string as input =>
         # # convert list to a single string before passing it to the function:
         # even_list = solution("".join(s_even))
