@@ -3,6 +3,30 @@
 
 
 '''
+You are given an array. Complete the function that returns the number of ALL elements
+within an array, including any nested arrays.
+[]                   -->  0
+[1, 2, 3]            -->  3
+["x", "y", ["z"]]    -->  4
+[1, 2, [3, 4, [5]]]  -->  7
+'''
+
+# def deep_count(a):
+#     count = 0
+    
+#     for el in a:
+#         count += 1
+        
+#         if isinstance(el, list):
+#             count += deep_count(el)
+#     return count
+
+
+# test_array = [[[[[[[[[]]]]]]]]]
+# print(deep_count(test_array)) # 8
+
+
+'''
 - split the string into pairs of two characters
 - if the string contains an odd number of characters then it should replace the missing second character of the final pair with an underscore ('_').
 
