@@ -13,16 +13,14 @@ of the result in original order.
 '''
 
 def sort_string(s, ordering):
-    letters_in = ""
-    letters_not_in = ""
+    
+    result = ""
     
     for o in ordering:
-        if o not in s:
-            return s
+        result += o * s.count(o)
+        s = s.replace(o, "")
 
-        print()
+    return result + s
 
-    return letters_in + letters_not_in
-
-print(sort_string("banana", "abn")) # "aaabnn"
+print(sort_string("bungholio", "aacbuoldiiaoh")) # buoolihng
 
