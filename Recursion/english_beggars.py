@@ -9,41 +9,52 @@ the length of the array is not necessarily a multiple of n; length can be even s
 in which case the last beggars will of course take nothing (0).
 '''
 
-# Iterative Approach with list comprehensions
+# Iterative approach with list comprehensions
 
-def beggars(coins, beggars):
+# def beggars(coins, beggars):
     
-    # list to hold the sum for each beggar
-    result = [0] * beggars # [0, 0]
+#     # list to hold the sum for each beggar
+#     result = [0] * beggars # [0, 0]
     
-    # distribute coins to each beggar
-    for i in range(len(coins)):
-        result[i%beggars] += coins[i]
-    return result
+#     # distribute coins to each beggar
+#     for i in range(len(coins)):
+#         result[i % beggars] += coins[i]
 
-
-values = [1,2,3,4,5]
-n = 2
-print(beggars(values, n)) # [9,6]
+#     return result
 
 
 # def beggars(values, n):
 #     return [sum(values[i::n]) for i in range(n)]
 
+'''
+Recursive approach with state track of recursive calls
+- an additional function is used to keep track of the current beggar and the accumulated income 
+- it takes additional parameters than in the original function
+'''
+
+def beggars(coins, num_beggars):
+    # initial income array with 0 income for each beggar
+    income = [0] * num_beggars
+    return distribute_coins(coins, num_beggars, 0, income)
+
+
+def distribute_coins(coins, num_beggars, current_beggar, current_income):
+    
+    # base case
+    if len(coins) == 0:
+        return current_income
+    
+    # update the current beggar's income with the first coin
+    current_income[current_beggar] += coins[0]
+    
+    return distribute_coins(coins[1:], num_beggars, (current_beggar + 1) % num_beggars, current_income)
+
+
+values = [1,2,3,4,5]
+n = 2
+print(beggars([1, 2, 3, 4, 5], 2))  # Output: [9, 6]
 
 
 
-# def beggars(coins, num_beggars):
-#     beggars(coins, num_beggars, 0, [])
-    
-# def beggars(coins, num_beggars, current_beggar, current_income):
-#     if len(coins) == 0:
-#         return current_income
-    
-#     # TODO updated_income = ???
-#     # TODO what else?
-    
-#     return beggars(coins, num_beggars, (current_beggar + 1) % num_beggars, updated_income )
-    
 
 
