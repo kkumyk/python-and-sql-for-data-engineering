@@ -9,8 +9,29 @@ the length of the array is not necessarily a multiple of n; length can be even s
 in which case the last beggars will of course take nothing (0).
 '''
 
-def beggars(values, n):
-    return [sum(values[i::n]) for i in range(n)]
+# Iterative Approach with list comprehensions
+
+def beggars(coins, beggars):
+    
+    # list to hold the sum for each beggar
+    result = [0] * beggars # [0, 0]
+    
+    # distribute coins to each beggar
+    for i in range(len(coins)):
+        result[i%beggars] += coins[i]
+    return result
+
+
+values = [1,2,3,4,5]
+n = 2
+print(beggars(values, n)) # [9,6]
+
+
+# def beggars(values, n):
+#     return [sum(values[i::n]) for i in range(n)]
+
+
+
 
 # def beggars(coins, num_beggars):
 #     beggars(coins, num_beggars, 0, [])
@@ -26,6 +47,3 @@ def beggars(values, n):
     
 
 
-values = [1,2,3,4,5]
-n = 2
-print(beggars(values, n)) # [9,6]
