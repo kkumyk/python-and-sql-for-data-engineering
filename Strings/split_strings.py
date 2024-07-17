@@ -44,13 +44,23 @@ def solution(s):
 '''
 
 
-def solution(s):
+# def solution(s):
     
-    if len(s) == 0:
-        return []
-    elif len(s) == 1:
-        return [s + "_"]
-    else:
-        return [s[:2]] + solution(s[2:])
+#     if len(s) == 0:
+#         return []
+#     elif len(s) == 1:
+#         return [s + "_"]
+#     else:
+#         return [s[:2]] + solution(s[2:])
 
-print(solution('abcfs'))
+# print(solution('abcfs'))
+
+
+
+
+
+def solution(s):
+    s+='_'
+    return[s[x:x+2] for x in range(0,len(s)-1,2)]
+
+print(solution('asdfadsf'))
