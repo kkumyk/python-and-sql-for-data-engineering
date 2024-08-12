@@ -6,7 +6,6 @@ def get_words(hash_of_letters):
         return letters
 
     all_letters = get_values(hash_of_letters)
-    # variations = [all_letters]
     
     def rec(string):
         base = 1
