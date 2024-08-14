@@ -1,5 +1,7 @@
-[CodeWars Solutions](/CodeWars/)
 
-[HackerRank Solutions](/HackerRank/)
+<!-- 
+https://www.codewars.com/kata/52180ce6f626d55cf8000071
 
-[LeetCode Solutions](/LeetCode/)
+
+https://www.codewars.com/kata/5631ac5139795b281d00007d/train/python
+-->
