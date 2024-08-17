@@ -19,6 +19,7 @@ SELECT
     "FirstName",
     "LastName",
     "Title",
-    CAST("BirthDate" AS DATE) AS "DataOnlyBirthData"
+    CAST("BirthDate" AS DATE) AS "DataOnlyBirthData" 
+    -- or use: "BirthDate"::DATE AS "DataOnlyBirthData"
 FROM "Employees"
 ORDER BY "BirthDate";
