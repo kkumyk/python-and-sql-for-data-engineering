@@ -1,3 +1,5 @@
+-- 6. Suppliers and ContactTitles
+
 select
     SupplierID,
     ContactName,
