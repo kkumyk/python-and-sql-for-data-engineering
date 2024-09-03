@@ -1,1 +1,1 @@
-Python and SQL codding solutions.
+Python and SQL coding solutions.
