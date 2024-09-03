@@ -17,4 +17,4 @@ the resulting rows will have an uppercase Q.
 
 select "ProductID", "ProductName"
 from "Products"
-where "ProductName" like '%queso%';
+where "ProductName" like '%queso%'; -- PostgreSQL
