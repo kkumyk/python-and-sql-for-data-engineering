@@ -11,8 +11,8 @@ where ContactTitle != 'Marketing Manager'; -- MS SQL Server
 
 select
     "SupplierID",
-    ContactName",
-    ContactTitle"
+    "ContactName",
+    "ContactTitle"
 from
     "Suppliers"
 where "ContactTitle" != 'Marketing Manager'; -- PostgreSQL
