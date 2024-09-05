@@ -25,4 +25,4 @@ ORDER BY
     -- -- OrderId	ProductID	UnitPrice	Quantity	TotalPrice
     -- -       1	101	        10.00         2	        20.00
     -- -       1	102	        15.00         1     	15.00
-    -- -       2	101	        10.00         3	        30.00
+    -- -       2	101	        10.00         3	        30.0
