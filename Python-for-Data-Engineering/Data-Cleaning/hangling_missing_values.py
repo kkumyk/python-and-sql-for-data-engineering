@@ -23,6 +23,9 @@ print(df)
 '''
 Sources:
 https://realpython.com/python-data-cleaning-numpy-pandas/
+https://github.com/darshilparmar/python-for-data-engineering?tab=readme-ov-file
+https://www.jigsawlabs.io/www.jigsawlabs.io#Section-Python
+https://colab.research.google.com/github/jigsawlabs-student/code-intro/blob/master/0-starting-to-code.ipynb#scrollTo=pSnVzoI6Zi_N
 https://www.datacamp.com/tutorial/guide-to-data-cleaning-in-python
 https://www.kdnuggets.com/2023/04/exploring-data-cleaning-techniques-python.html
 https://medium.com/@dossieranalysis/python-for-data-cleaning-best-practices-and-efficient-techniques-3072ed3935af
