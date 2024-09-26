@@ -108,6 +108,8 @@ https://github.com/darshilparmar/python-for-data-engineering/blob/main/4.%20Pyth
 https://pandas.pydata.org/pandas-docs/stable/user_guide/dsintro.html
 https://realpython.com/python-data-cleaning-numpy-pandas/
 https://github.com/darshilparmar/python-for-data-engineering/blob/main/3.%20Python%20Intermediate/Intermediate%20-%20Functions%20and%20OOPS.ipynb
+
+https://www.coursera.org/learn/python-project-for-data-engineering/lecture/6mcB3/optional-web-scraping
 '''
 
 
