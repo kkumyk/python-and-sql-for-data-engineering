@@ -1,20 +1,27 @@
--- 7. Products with "queso" in ProductName
+-- 7. Products with "auc" in ProductName
+
+/*
+Task:
+Return the ProductID and ProductName for those products where the ProductName includes the string "au"
+
+Learnings:
+The LIKE operator is always used with wildcards, such as % , which substitutes for any number of characters.
+
+*/
 
 select
     ProductID, ProductName
 from
     Products
 where 
-    ProductName LIKE '%queso%'; -- MS SQL Server
+    ProductName LIKE '%au%';
 
-/*Learnings:
 
-The LIKE operator is always used with wildcards, such as % , which substitutes for any number of characters.
-
-Note that even though the search string used a lowercase "q" with the LIKE clause,
-the resulting rows will have an uppercase Q.
-*/
-
-select "ProductID", "ProductName"
-from "Products"
-where "ProductName" like '%queso%'; -- PostgreSQL
+--  productid |           productname            
+-- -----------+----------------------------------
+--          8 | Northwoods Cranberry Sauce
+--         28 | Rössle Sauerkraut
+--         59 | Raclette Courdavault
+--         62 | Tarte au sucre
+--         65 | Louisiana Fiery Hot Pepper Sauce
+--         67 | Laughing Lumberjack Lager
