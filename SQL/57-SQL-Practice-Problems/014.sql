@@ -1,8 +1,10 @@
 -- 14. How many customers?
 
-SELECT
-    TotalCustomers = count(*)
-FROM customers; -- MS SQL Server
+select count(*) as total_customers from customers;
 
-SELECT count(*) as TotalCustomers
-FROM Customers; -- PostgreSQL
+/*
+ total_customers 
+-----------------
+              91
+(1 row)
+*/
