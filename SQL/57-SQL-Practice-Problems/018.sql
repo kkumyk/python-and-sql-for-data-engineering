@@ -28,7 +28,7 @@ Expected Result:
 
 select productid, productname, companyname as supplier
 from products p
-join supplies on p.supplierid = s.supplierid;
+join suppliers s on p.supplierid = s.supplierid;
 
 /*
 Learnings:
