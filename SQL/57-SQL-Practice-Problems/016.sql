@@ -1,6 +1,10 @@
 -- 16. Countries where there are customers 
 
-SELECT Country FROM Customers GROUP BY Country; -- MS SQL Server
-SELECT DISTINCT Country FROM Customers; -- MS SQL Server
+select distinct country from customers;
 
-SELECT "Country" FROM "Customers" GROUP BY "Country" -- PostgreSQL
+select country from customers group by country;
+
+/*
+Learnings:
+Although Group By and DISTINCT get to the same result, Group By is used more ofter as it can be combined with other functions such us Count and Sum.
+*/
