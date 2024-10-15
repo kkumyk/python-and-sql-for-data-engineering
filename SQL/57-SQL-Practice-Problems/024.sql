@@ -1,32 +1,28 @@
--- 024. Customer list by region
+/* 024. Customer list by region
+- list all customers from all regions alphabetically
+- move customers with no region to the end
+- sort companies within the same region by customer ID.  
 
--- MS SQL Server
+Customers:
+ customerid |            companyname             |  contactname   |     contacttitle     |            address            |    city     | region | postalcode | country |    phone     |     fax      
+------------+------------------------------------+----------------+----------------------+-------------------------------+-------------+--------+------------+---------+--------------+--------------
+ ALFKI      | Alfreds Futterkiste                | Maria Anders   | Sales Representative | Obere Str. 57                 | Berlin      |        | 12209      | Germany | 030-0074321  | 030-0076545
+ ANATR      | Ana Trujillo Emparedados y helados | Ana Trujillo   | Owner                | Avda. de la Constitución 2222 | México D.F. |        | 05021      | Mexico  | (5) 555-4729 | (5) 555-3745
+ ANTON      | Antonio Moreno Taquería            | Antonio Moreno | Owner                | Mataderos  2312               | México D.F. |        | 05023      | Mexico  | (5) 555-3932 | 
+(3 rows)
 
-Select CustomerID, CompanyName, Region
-From Customers
-Order by
-    Case
-        when Region is null then 1
-        else 0
-    End
-    , Region, CustomerID
-
-/*
-Learnings:
-Include Case expression in the Order By clause and add the additional fields for sorting such as Region and CustomerID.
-
-If we need to see the sorting field in the output, you would not need to repeat the case statement in the Order by,
-you can just refer to the alias - RegionOrder:
+Expected Result:
+ customerid |             companyname              |    region     
+------------+--------------------------------------+---------------
+ OLDWO      | Old World Delicatessen               | AK
+ BOTTM      | Bottom-Dollar Markets                | BC
+ LAUGB      | Laughing Bacchus Wine Cellars        | BC 
+ ...
+ WARTH      | Wartian Herkku                       | 
+ WILMK      | Wilman Kala                          | 
+ WOLZA      | Wolski  Zajazd                       | 
+(91 rows)
 */
-Select CustomerID, CompanyName, Region, RegionOrder = 
-                                            Case
-                                            when Region is null then 1
-                                            else 0
-                                            End
-From Customers
-Order By RegionOrder, Region, CustomerID
-
--- PostgreSQL
 
 SELECT CustomerID, CompanyName, Region
 FROM Customers
@@ -37,9 +33,22 @@ ORDER BY
     END,
     Region, CustomerID;
 
--- the same with the sorting field included in the output:
+/*
+The same with the sorting field included in the output:
 
-SELECT CustomerID, CompanyName, Region,
+ customerid |             companyname              |    region     | regionorder 
+------------+--------------------------------------+---------------+-------------
+ OLDWO      | Old World Delicatessen               | AK            |           0
+ BOTTM      | Bottom-Dollar Markets                | BC            |           0
+ LAUGB      | Laughing Bacchus Wine Cellars        | BC            |           0
+...
+ WARTH      | Wartian Herkku                       |               |           1
+ WILMK      | Wilman Kala                          |               |           1
+ WOLZA      | Wolski  Zajazd                       |               |           1
+(91 rows)
+*/
+
+SELECT CustomerID, CompanyName, Region
     CASE
         WHEN Region IS NULL THEN 1
         ELSE 0
@@ -49,8 +58,15 @@ ORDER BY
     RegionOrder, Region, CustomerID;
 
 
-/*
-Learnings: Zero-Null Case Trick in SQL
+/* Learnings:
+
+I. Include Case expression in the Order By clause and add the additional fields for sorting such as Region and CustomerID.
+
+If we need to see the sorting field in the output, you would not need to repeat the case statement in the Order by,
+you can just refer to the alias - RegionOrder:
+
+
+II. Zero-Null Case Trick in SQL
 
 - handles NULL values when summing, counting, or aggregating data;
 - replaces missing data with 0 instead of showing that this data is ignored;
@@ -81,6 +97,7 @@ Output result:
 year	month	specialty_coffee_sales	regular_coffee_sales
 2023	01	    350	                    220
 2023	02	    180	                    90
-2022	12	    220 	                130
+2022	12	    220 	                130                 
 
+Focus: CASE expression
 */
