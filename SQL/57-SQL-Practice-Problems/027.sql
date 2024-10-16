@@ -1,18 +1,19 @@
--- 027. High freight charges with between
+/* 027. High freight charges with between
 
--- PostgreSQL
+another solution to the previous task - get high freight charges for a specific year - using BETWEEN operator
+
+Focus: return records for a specific time frame using BETWEEN operator
+*/
 
 SELECT
-    ShipCountry,
-    AVG(Fright) AS AverageFreight
-FROM Orders
-WHERE OrderDate BETWEEN '2015-01-01' AND '2015-12-31 23:59:59'
-GROUP BY ShipCountry
-ORDER BY AverageFreight DESC
+  shipcountry,
+  avg(freight) as avg_freight
+FROM
+  orders
+WHERE
+  orderdate between '1997-01-01' and '1998-01-01'
+GROUP BY
+  shipcountry
+ORDER BY
+  avg_freight DESC
 LIMIT 3;
-
-/*
-Learnings:
-
-Since OrderDate is datetime/timestamp, including the time ensures that the full year of 2015 is captured.
-*/
