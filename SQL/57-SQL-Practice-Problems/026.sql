@@ -1,5 +1,5 @@
-/* 026. High freight charges in 2015
-- what are the high freight charges for orders in 2015
+/* 026. High freight charges in 1997
+- what are the high freight charges for orders in 1997
  orderid | customerid | employeeid | orderdate  | requireddate | shippeddate | shipvia | freight |         shipname          |    shipaddress     |    shipcity    | shipregion | shippostalcode | shipcountry 
 ---------+------------+------------+------------+--------------+-------------+---------+---------+---------------------------+--------------------+----------------+------------+----------------+-------------
    10248 | VINET      |          5 | 1996-07-04 | 1996-08-01   | 1996-07-16  |       3 |   32.38 | Vins et alcools Chevalier | 59 rue de l'Abbaye | Reims          |            | 51100          | France
