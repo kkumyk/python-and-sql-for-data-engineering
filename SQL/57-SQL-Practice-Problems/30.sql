@@ -1,17 +1,14 @@
--- 30. Customers with no orders
+/* 30. Customers with no orders
 
--- MS SQL Server
-Select
-    Customers_CustomerID = Customers.CustomerID,
-    Orders_CustomerID = Orders.CustomerID
-From Customers
-    left join Orders
-        on Orders.CustomerID = Customers.CustomerID
-Where
-    Orders.CustomerID is null
+Expected Result:
+ customers_customerid | orders_customerid 
+----------------------+-------------------
+ FISSA                | 
+ PARIS                | 
 
+Learnings:
 
-/*Learnings:
+The main options of LEFT OUTER are: IS NULL, NOT IN, NOT EXISTS
 
 This query is called a LEFT OUTER JOIN because the table mentioned on the left of the join operator will have each of its rows in the output at least once,
 whereas the table on the right will only have those rows output that match some row of the left table.
@@ -34,37 +31,15 @@ RIGHT (OUTER) JOIN
 FULL (OUTER) JOIN
      - rows from both tables are kept, regardless of whether a matching row exists in the other table
 
-around_the_world_in_eighty_bottles=> select * from uk_white_grape_varieties;
- id | grape_variety_name 
-----+--------------------
-  1 | Chardonnay
-  2 | Gewürztraminer
-  3 | Seyval Blanc
-  4 | Pinot Gris/Grigio
-  5 | Müller-Thurgau
-  6 | Madeleine Angevine
-  7 | Reichensteiner
-  8 | Schönburger
-  9 | Ortega
-(9 rows)
-
-around_the_world_in_eighty_bottles=> select * from china_white_grape_varieties;
- id | grape_variety_name 
-----+--------------------
-  1 | Chardonnay
-  2 | Italian Riesling
-  3 | Longyan
-  4 | Vidal Blanc
-
+Focus: LEFT JOIN with IS NULL to return non-existing values
 */
 
---- INNER JOIN: find the white wine varieties that UK and China have in common
-
-SELECT china_white_grape_varieties.grape_variety_name as china_and_uk_common_white_grapes
-FROM china_white_grape_varieties
-INNER JOIN uk_white_grape_varieties
-    ON uk_white_grape_varieties.grape_variety_name = china_white_grape_varieties.grape_variety_name;
-
---  china_and_uk_common_white_grapes 
--- ----------------------------------
---  Chardonnay
+SELECT
+  c.customerid as customers_customerID,
+  o.customerid as orders_customerID
+FROM
+  customers c
+LEFT JOIN
+  orders o on c.customerid = o.customerid
+WHERE
+  o.customerid is null;
