@@ -1,5 +1,4 @@
 /* 32. High-value customers
-
 - find high-value customers with order value at least 10000
 - high-value customers are:
     - made at least 1 order equal over 10000 or more not including the discount
@@ -15,11 +14,9 @@ Expected Result:
  RATTC      | Rattlesnake Canyon Grocery   |   10889 |     11380.00
  HUNGO      | Hungry Owl All-Night Grocers |   10897 |     10835.24
 
-
 Learnings: Aggregate functions can only be used to filter in the Having clause, not the Where clause.
 
-Focus: aggregate functions in the HAVING clause
-*/
+Focus: the use of aggregate functions in the HAVING clause */
 
 SELECT
   c.customerid,
