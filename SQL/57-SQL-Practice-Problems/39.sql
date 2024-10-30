@@ -18,7 +18,8 @@ CTE + Sub-query Expected Result:
    11030 |         2 |        19 |      100 |     0.25
    11030 |         5 |     21.35 |       70 |        0
    11030 |        29 |    123.79 |       60 |     0.25
-   11030 |        59 |        55 |      100 |     0.25 */
+   11030 |        59 |        55 |      100 |     0.25
+  (16 rows) */
 
 WITH repeated_quantities AS (
     SELECT
