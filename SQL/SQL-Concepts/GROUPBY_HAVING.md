@@ -51,9 +51,10 @@ HAVING
 --  dawn, sunrise |                    2
 ```
 
+3. Show the distinct Russian translations for each English translation that has multiple unique Russian translations
 
-
- <!-- To show the distinct Russian translations for each English translation that has multiple unique Russian translations, you can use a Common Table Expression (CTE) to identify the qualifying English translations first, and then join it back to the original table to retrieve the individual Russian translations.
+ ```sql
+ -- The query below uses a Common Table Expression (CTE) to identify the qualifying English translations first, and then joins it back to the original table to retrieve the individual Russian translations.
 
 WITH multiple_rus_translations AS (
     SELECT 
@@ -66,18 +67,19 @@ WITH multiple_rus_translations AS (
         COUNT(DISTINCT rus_transl) > 1
 )
 SELECT 
-    lt.eng_transl,
-    lt.rus_transl
+    words.eng_transl,
+    words.rus_transl
 FROM 
-    poems_word lt
+    poems_word words
 JOIN 
-    multiple_rus_translations mrt ON lt.eng_transl = mrt.eng_transl
+    multiple_rus_translations mrt ON words.eng_transl = mrt.eng_transl
 ORDER BY 
-    lt.eng_transl, 
-    lt.rus_transl;
+    words.eng_transl, 
+    words.rus_transl;
 
 --   eng_transl   |  rus_transl   
 -- ---------------+---------------
 --  dawn, sunrise | рассвет
 --  dawn, sunrise | рассвет, заря
--- (2 rows)  -->
+-- (2 rows) 
+```
