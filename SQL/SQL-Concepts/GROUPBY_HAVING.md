@@ -9,9 +9,9 @@
 1. Identify words where eng and rus translation scraping went wrong:
     find words that have both English and Russian translations appearing at least twice in the table poems_word.
 
-The query below groups words by English and Russian translations, counts the occurrences of each translation pair, and filters for pairs that appear at least twice.
-
 ```sql
+-- The query below groups words by English and Russian translations, counts the occurrences of each translation pair, and filters for pairs that appear at least twice.
+
 SELECT
     eng_transl, 
     rus_transl, 
@@ -32,12 +32,13 @@ ORDER BY
 --  wall (house)              | стена                     |            2
 -- (3 rows)
 ```
-<!-- 
 
--- Discover Words with More than One Russian Translation for the Same English Word
+2. Find words with more than one Russian translation for the same English word.
+
+```sql
 SELECT 
     eng_transl, 
-    COUNT(DISTINCT rus_transl) AS num_rus_translations
+    COUNT(DISTINCT rus_transl) AS num_rus_transls
 FROM 
     poems_word
 GROUP BY 
@@ -45,13 +46,14 @@ GROUP BY
 HAVING 
     COUNT(DISTINCT rus_transl) > 1;
 
---   eng_transl   | num_rus_translations 
+--   eng_transl   | num_rus_transls 
 -- ---------------+----------------------
 --  dawn, sunrise |                    2
+```
 
 
 
--- To show the distinct Russian translations for each English translation that has multiple unique Russian translations, you can use a Common Table Expression (CTE) to identify the qualifying English translations first, and then join it back to the original table to retrieve the individual Russian translations.
+ <!-- To show the distinct Russian translations for each English translation that has multiple unique Russian translations, you can use a Common Table Expression (CTE) to identify the qualifying English translations first, and then join it back to the original table to retrieve the individual Russian translations.
 
 WITH multiple_rus_translations AS (
     SELECT 
@@ -78,4 +80,4 @@ ORDER BY
 -- ---------------+---------------
 --  dawn, sunrise | рассвет
 --  dawn, sunrise | рассвет, заря
--- (2 rows) -->
+-- (2 rows)  -->
