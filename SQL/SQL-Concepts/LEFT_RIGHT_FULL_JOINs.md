@@ -20,10 +20,11 @@ LEFT JOIN poems_word AS w ON pw.word_id = w.word_id
 WHERE w.eng_transl is NULL;
 
 /*
-The above query helped to identify poems where no word translations could be scraped and added into the vocabulary section:
+The above query helped to identify poems where no word translations could be
+scraped and added into the vocabulary section:
 */
 ```
-<img src="https://github.com/kkumyk/python-and-sql-for-data-engineering/blob/main/SQL/_doc/missing_vocabulary.png" width=300 hight=400>
+<img src="https://github.com/kkumyk/python-and-sql-for-data-engineering/blob/main/SQL/_doc/missing_vocabulary.png" width=400 hight=500>
 
 </br>
 
