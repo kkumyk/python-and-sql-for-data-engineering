@@ -12,7 +12,7 @@ SQL (Structured Query Language) is divided into different command categories:
 
 - TCL (Transaction Control Language): Manages database transactions (commit, rollback).
 
-<img src="https://github.com/kkumyk/python-and-sql-for-data-engineering/blob/main/SQL/_doc/sql_commands.png" width="400" height="500"></img>
+<img src="https://github.com/kkumyk/python-and-sql-for-data-engineering/blob/main/SQL/_doc/sql_commands.png" width="550" height="650"></img>
 
 [Source](https://www.linkedin.com/posts/nelsonamigoscode_systemdesign-coding-interviewtips-activity-7259196704107687937-xxW0/)
 
