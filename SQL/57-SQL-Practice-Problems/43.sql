@@ -82,7 +82,7 @@ WITH late_orders AS (
         This will reduces the number of times the order table needs to be scanned and removes the need of joining two CTEs.
     2.  Remove ORDER BY clause from both CTEs as they don't impact the final output.
         Sorting should be done only in the main query to reduce the processing workload.
-    3.  Use COALESCE to handle missing late orders: if a sales person does not have any late orders, the final output will recunt NULL.
+    3.  Use COALESCE to handle missing late orders: if a sales person does not have any late orders, the final output will return NULL.
         We can use COALESCE to replace NULL with 0.
 */
 
