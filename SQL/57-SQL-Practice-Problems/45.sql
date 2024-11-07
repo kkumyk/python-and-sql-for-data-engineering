@@ -17,7 +17,7 @@ Expected Result:
 WITH late_orders AS (
   SELECT
     employeeid,
-    count(employeeid) AS total
+    count(employeeid) AS total_lates
   FROM
     orders
   WHERE
@@ -38,10 +38,10 @@ SELECT
   os.employeeid,
   e.lastname,
   os.total,
-  COALESCE(lo.total, 0) AS late_orders
+  COALESCE(lo.total_lates, 0) AS late_orders
 FROM
   orders_summary os
-INNER JOIN
+JOIN
   employees e ON os.employeeid = e.employeeid
 LEFT JOIN
   late_orders lo ON os.employeeid = lo.employeeid
@@ -54,7 +54,7 @@ Explanations
 
 1. CTE - late_orders returns the total number of late orders by an employee:
 
- employeeid | total 
+ employeeid | total_late_orders
 ------------+-------
           8 |     5
           9 |     5
