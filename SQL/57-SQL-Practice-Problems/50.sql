@@ -2,6 +2,15 @@
 Show all the defined customer groups and the percentage in each.
 Sort by the total in each group, in descending order.
 
+Expected Result:
+   group   | group_total |     percentage      
+-----------+-------------+---------------------
+ Medium    |          36 | 44.4444444444444444
+ Low       |          20 | 24.6913580246913580
+ Very High |          13 | 16.0493827160493827
+ High      |          12 | 14.8148148148148148
+(4 rows)
+
 Hint: Use CTE to get the counts in each customer grouping for the final output.
 
 Solution Notes:
