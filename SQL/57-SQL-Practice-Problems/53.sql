@@ -68,7 +68,7 @@ WITH countries AS (
     customers
 )
 SELECT
-  sp.country as suplier_country,
+  sp.country as supplier_country,
   ct.country as customer_country
 FROM
   countries c
