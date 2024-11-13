@@ -39,12 +39,8 @@ FROM word_frequency AS wf
 JOIN poems_poem_words AS pw ON wf.word_id = pw.word_id
 JOIN poems_poem AS p ON pw.poem_id = p.poem_id where wf.poem_count>=7
 ORDER BY wf.poem_count DESC, wf.word ASC;
-
-
-
 ```
-<summary> Expected Results:
-    <details>
+<summary> Expected Results:<details>
 ```sql
 
  poem_id |               title               |  word   |                                   eng_transl                                   | poem_count 
@@ -146,4 +142,4 @@ ORDER BY wf.poem_count DESC, wf.word ASC;
 
     ```
     </details>
-</summary>)
+</summary>
