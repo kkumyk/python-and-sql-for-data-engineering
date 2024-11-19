@@ -11,18 +11,30 @@ customerid | initial_order_id | initial_order_date | nextorderid | nextorderdate
  
 Query Explanation Notes:
     - the query uses a self-join where the same table is joined with itself, enabling data comparison within the same dataset
+    - a self join is a type of join where a table is joined with itself; useful when you need to compare rows within the same table
     - the query compares the initial order for each customer with their next order placed within 5 days
     - the comparison is always between orders made in chronological order (the initial_order comes before the next_order)
     - the orders table is used twice with different aliases:
         - initial_order for the initial order
         - next_order for the next order
 
+Self Join Syntax:
+The syntax for a self join is the same as for a regular join, but with one important difference -
+the table is aliased twice to distinguish the two instances of the same table. See below.
+
+  SELECT 
+      a.column_name, 
+      b.column_name
+  FROM 
+      table_name AS a
+  JOIN 
+      table_name AS b
+  ON 
+      a.common_column = b.common_column;
+
 FROM orders initial_order:
 defines the orders table as initial_order which refers to the first instance
-the table itself is still orders, but the alias initial_order differentiates it from another instance of the same table - next_order
-
-
- */
+the table itself is still orders, but the alias initial_order differentiates it from another instance of the same table - next_order */
 
 SELECT
   initial_order.customerid,
@@ -34,7 +46,9 @@ SELECT
 FROM
   orders initial_order
 JOIN
-  orders next_order on initial_order.customerid = next_order.customerid
+  orders next_order
+ON
+  initial_order.customerid = next_order.customerid
 WHERE
   initial_order.orderid < next_order.orderid
   AND
