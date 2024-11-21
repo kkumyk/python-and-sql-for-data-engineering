@@ -24,6 +24,8 @@ Note, that:
 - PARTITION BY customerid works without the alias because SQL automatically assumes that the customerid column comes from the table defined in the FROM clause, in this case, orders.
 */
 
+-- Solution 1. using LEAD window function in CTE:
+
 WITH customer_orders AS (
   SELECT
     customerid,
@@ -60,3 +62,27 @@ LEAD(expression, offset, default_value)
 - offset (optional) - the number of rows to look ahead from the current row (default=1 / the immediate next row
 - default_value (optional) - the value to return if there is no "next" row (e.g.: for the last row, this will be used).
 - PARTITION BY divides the result set into partitions (groups of rows), so the LEAD function operates independently within each partition */
+
+
+-- Solution 2. using subquery
+
+SELECT
+  customerid,
+  initial_order_id,
+  initial_order_date,
+  next_order_date,
+  (next_order_date - initial_order_date) AS daysbetween
+FROM (
+  SELECT
+    o.customerid,
+    o.orderid AS initial_order_id,
+    o.orderdate AS initial_order_date,
+    LEAD(o.orderdate, 1) OVER (PARTITION BY o.customerid ORDER BY o.orderdate) AS next_order_date
+  FROM
+    orders o
+) subquery
+WHERE
+  (next_order_date - initial_order_date) <= 5
+ORDER BY
+  customerid, initial_order_date;
+
