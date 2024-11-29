@@ -1,5 +1,6 @@
-/*
-29. Employee/Order detail report (join four tables) displaying only specific fields
+/* 29. Employee and Order detail report displaying only specific fields
+
+Task: show employees and order detail information (orderid, productname, quantity).
 
 Expected Result:
  employeeid | lastname  | orderid |           productname            | quantity 
@@ -10,10 +11,11 @@ Expected Result:
           6 | Suyama    |   10249 | Tofu                             |        9
           6 | Suyama    |   10249 | Manjimup Dried Apples            |       40 ... 
 
-Focus: practice (inner) joins across multiple tables */
+Focus: practice (inner) joins across multiple tables
+Four tables need to be joined: orders, employees, order_details and products. */
 
 SELECT
-  o.employeeid,
+  e.employeeid,
   e.lastname,
   o.orderid,
   p.productname,
