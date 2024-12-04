@@ -110,6 +110,33 @@ WHERE p.title is NULL;
 - on large datasets can be resource-intensive - can have high processing and memory costs if there are a lot of unmatched rows on both sides
 
 
+
+```sql
+
+/*
+Use Case: return poems and their associated word where the translation exists:
+ poem_id |  title |   word            | translation                                      
+---------+-------------------------------------+------------------
+       1 | Мазэ    | мазэ             | 1. moon 2. month
+       1 | Мазэ    | уафэ             | sky
+       1 | Мазэ    | дыщэ             | gold, (Au) aurum
+       1 | Мазэ    | плъыжь           | red (colour) ...      */ 
+SELECT
+  pp.poem_id,
+  pp.title AS title,
+  pw.word AS word,
+  pw.eng_transl AS translation
+FROM
+  poems_poem pp
+FULL JOIN
+  poems_poem_words ppw ON pp.poem_id = ppw.poem_id
+FULL JOIN
+  poems_word pw ON ppw.word_id = pw.word_id
+WHERE eng_transl IS NOT NULL
+ORDER BY
+  pp.poem_id, ppw.id;
+```
+
 </br>
 
 # JOIN Alternatives
