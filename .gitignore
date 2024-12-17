@@ -1,3 +1,5 @@
 data_inputs
 data_outputs
-Interview-Tasks-Python
+__pycache__
+.pytest_cache
+[2-8].py
