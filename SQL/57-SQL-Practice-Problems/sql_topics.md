@@ -90,4 +90,4 @@
     ```bash
     psql -U sqllearner -d sqlproblems;
     ```
-7. Populate database with the [data from this source](https://github.com/rgerhardt/57-sql-problems/blob/master/northwind.sql).
+7. Populate database with the [data from the northwind.sql](https://github.com/rgerhardt/57-sql-problems/blob/master/northwind.sql).
