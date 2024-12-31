@@ -1,3 +1,4 @@
+# Tasks Topics Overview
 1. [Simple SELECT statement](https://github.com/kkumyk/python-and-sql-for-data-engineering/blob/main/SQL/57-SQL-Practice-Problems/01-5.sql): return data from all columns from a table.
 2. [SELECT specific columns](https://github.com/kkumyk/python-and-sql-for-data-engineering/blob/main/SQL/57-SQL-Practice-Problems/01-5.sql) from a table.
 3. [SELECT specific columns WHERE](https://github.com/kkumyk/python-and-sql-for-data-engineering/blob/main/SQL/57-SQL-Practice-Problems/01-5.sql) title matches a condition.
@@ -55,3 +56,38 @@
 55. [Window / Rank functions for rank assignment](https://github.com/kkumyk/python-and-sql-for-data-engineering/blob/main/SQL/57-SQL-Practice-Problems/55.sql) based on multiple conditions.
 56. [SELF-JOIN for data comparison](https://github.com/kkumyk/python-and-sql-for-data-engineering/blob/main/SQL/57-SQL-Practice-Problems/56.sql) within the same dataset.
 57. [LEAD window function in a CTE](https://github.com/kkumyk/python-and-sql-for-data-engineering/blob/main/SQL/57-SQL-Practice-Problems/57.sql).
+
+<hr>
+
+# Postgres Database Setup on Ubuntu 
+
+1. Verify Postgres is installed
+    ```bash
+    psql --version
+    ```
+2. Start the PostgreSQL Service.
+
+    PostgreSQL operates as a database server (a background process that manages posgres dbs and allows applications to connect to them). Without starting this service you won't be able to interact with the db.
+    ```bash
+    sudo systemctl start postgresql
+    ```
+3. Switch to the PostgreSQL's sdefault user <i>postgres</i> and access the PostgreSQl interactive terminal:
+    ```bash
+    sudo -i -u postgres
+    psql
+    ```
+4. Create a new database.
+    ```bash
+    CREATE DATABASE sqlproblems;
+    ```
+5. Create a new user (optional), grant access to the database and exit.
+    ```bash
+    CREATE USER sqllearner WITH PASSWORD 'password';
+    GRANT ALL PRIVILEGES ON DATABASE sqlproblems TO sqllearner;
+    \q
+    ```
+6. Access the database
+    ```bash
+    psql -U sqllearner -d sqlproblems;
+    ```
+7. Populate database with the [data from this source](https://github.com/rgerhardt/57-sql-problems/blob/master/northwind.sql).
