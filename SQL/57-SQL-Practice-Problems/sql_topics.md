@@ -80,7 +80,7 @@
     ```bash
     CREATE DATABASE sqlproblems;
     ```
-5. Create a new user (optional), grant access to the database and exit.
+5. Create a new user , grant access to the database and exit. (OPTIONAL)
     ```bash
     CREATE USER sqllearner WITH PASSWORD 'password';
     GRANT ALL PRIVILEGES ON DATABASE sqlproblems TO sqllearner;
@@ -88,6 +88,6 @@
     ```
 6. Access the database
     ```bash
-    psql -U sqllearner -d sqlproblems;
+    psql -U postgres -d sqlproblems;
     ```
 7. Populate database with the [data from the northwind.sql](https://github.com/rgerhardt/57-sql-problems/blob/master/northwind.sql).

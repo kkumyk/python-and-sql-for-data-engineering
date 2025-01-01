@@ -41,7 +41,7 @@ select categoryname, description from categories;
 
 -- Return FirstName, LastName, and HireDate of all the employees with the Title of Sales Representative.
 
-select FirstName, LastName, HireDate from Employees where Title = 'Sales Representative';
+select firstname, lastname, hiredate from employees where title = 'Sales Representative';
 
 --  firstname | lastname  |  hiredate  
 -- -----------+-----------+------------
@@ -55,7 +55,7 @@ select FirstName, LastName, HireDate from Employees where Title = 'Sales Represe
 
 -- 4. Sales reps in US
 
-select FirstName, LastName, HireDate from Employees where Title = 'Sales Representative' and Country = 'USA';
+select firstname, lastname, hiredate from employees where title = 'Sales Representative' and country = 'USA';
 
 --  firstname | lastname  |  hiredate  
 -- -----------+-----------+------------
@@ -73,12 +73,7 @@ select OrderID, OrderDate from Orders where EmployeeID = 5;
 -- ---------+------------
 --    10248 | 1996-07-04
 --    10254 | 1996-07-11
---    10269 | 1996-07-31...
---    10812 | 1998-01-02
---    10823 | 1998-01-09
---    10841 | 1998-01-20
---    10851 | 1998-01-26
---    10866 | 1998-02-03
---    10869 | 1998-02-04
---    10870 | 1998-02-04
---    10872 | 1998-02-05
+-- ...
+--    10954 | 1998-03-17
+--    11043 | 1998-04-22
+-- (42 rows)

@@ -6,15 +6,13 @@ Return the ProductID and ProductName for those products where the ProductName in
 
 Learnings:
 The LIKE operator is always used with wildcards, such as % , which substitutes for any number of characters.
-
 */
 
 select
-    ProductID, ProductName
-from
-    Products
-where 
-    ProductName LIKE '%au%';
+    productid, productname
+from products
+where
+    productname like '%au%';
 
 
 --  productid |           productname            
@@ -25,3 +23,4 @@ where
 --         62 | Tarte au sucre
 --         65 | Louisiana Fiery Hot Pepper Sauce
 --         67 | Laughing Lumberjack Lager
+-- (6 rows)

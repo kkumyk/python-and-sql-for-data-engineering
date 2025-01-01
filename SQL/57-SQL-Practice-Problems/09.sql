@@ -1,21 +1,22 @@
 -- 9. Orders shipping to any country in Latin America
 
-select OrderID, CustomerID, ShipCountry from Orders where ShipCountry in ('Brazil', 'Argentina', 'Venezuela');
+select
+   orderid, customerid, shipcountry
+from
+   orders
+where
+   shipcountry in ('Brazil','Venisuella','Argentina');
 
 /*
-
-Using In operator to find orders from Latin America.  
-
-Output Result:
+Using In operator to find orders from Latin America. Output Result:
 
  orderid | customerid | shipcountry 
 ---------+------------+-------------
    10250 | HANAR      | Brazil
    10253 | HANAR      | Brazil
-   10256 | WELLI      | Brazil
-   10257 | HILAA      | Venezuela
-   10261 | QUEDE      | Brazil
-   10268 | GROSR      | Venezuela
-   10283 | LILAS      | Venezuela
-   10287 | RICAR      | Brazil ...
+'''
+   11054 | CACTU      | Argentina
+   11059 | RICAR      | Brazil
+   11068 | QUEEN      | Brazil
+(99 rows)
 */
