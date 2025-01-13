@@ -8,6 +8,13 @@ In output we see in Postgres however does not return the time part. As a result,
  Margaret  | Peacock   | Sales Representative     | 1937-09-19
  Nancy     | Davolio   | Sales Representative     | 1948-12-08
  Andrew    | Fuller    | Vice President, Sales    | 1952-02-19
+ Steven    | Buchanan  | Sales Manager            | 1955-03-04
+ Laura     | Callahan  | Inside Sales Coordinator | 1958-01-09
+ Robert    | King      | Sales Representative     | 1960-05-29
+ Michael   | Suyama    | Sales Representative     | 1963-07-02
+ Janet     | Leverling | Sales Representative     | 1963-08-30
+ Anne      | Dodsworth | Sales Representative     | 1966-01-27
+(9 rows)
 
 CAST function converts one data type to another.
 CAST syntax: CAST(expression AS target_data_type) with expression to be value or column to be converted. 
