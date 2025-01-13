@@ -1,4 +1,4 @@
-# 57 SQL Practice Problems | Topics Overview
+# 57 SQL Practice Problems - Topics Overview
 1. [Simple SELECT statement](https://github.com/kkumyk/python-and-sql-for-data-engineering/blob/main/SQL/57-SQL-Practice-Problems/01-5.sql): return data from all columns from a table.
 2. [SELECT specific columns](https://github.com/kkumyk/python-and-sql-for-data-engineering/blob/main/SQL/57-SQL-Practice-Problems/01-5.sql) from a table.
 3. [SELECT specific columns WHERE](https://github.com/kkumyk/python-and-sql-for-data-engineering/blob/main/SQL/57-SQL-Practice-Problems/01-5.sql) title matches a condition.
