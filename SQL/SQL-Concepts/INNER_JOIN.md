@@ -11,8 +11,7 @@
 - useful for retrieving related data across tables
 
 ```sql
-/*
-Use case: Select all poems that contain a certain word based on its word_id 32 (here: удз - grass).
+/* Use case: Select all poems that contain a certain word based on its word_id 32 (here: удз - grass).
 Expected result:
  poem_id | word_id |             title              
 ---------+---------+--------------------------------
@@ -28,14 +27,11 @@ from poems_poem p
 join poems_poem_words w on p.poem_id=w.poem_id
 where word_id in (32);
 
-/*
-Use case: Find all poems that contain specific words along with the words' translations.
-
-poems_poem:     poems_poem_words:       poems_word:
- poem_id         id                      word_id   
- title           poem_id                 word     
- author          word_id                 eng_transl
- content
+/* Use case: Find all poems that contain specific words along with the words' translations.
+Tables 
+poems_poem:       poem_id | title | autor | contents
+poems_poem_words: id | poem_id | word_id
+poems_word:       word_id | word | eng_transl
 
  poem_id |             title              | word |             eng_transl              
 ---------+--------------------------------+------+-------------------------------------
@@ -47,8 +43,7 @@ poems_poem:     poems_poem_words:       poems_word:
        4 | Си лъахэ - си удз гъэгъа       | удз  | grass, plant
       77 | Схуэзыгъэбагъуэу си гуащIэр... | удз  | grass, plant
       67 | Удз гъэгъа щхъуантIэ           | удз  | grass, plant
-
-*/
+(8 rows) */
 
 select p.poem_id, p.title, w.word, w.eng_transl
 from poems_poem p
@@ -56,5 +51,30 @@ join poems_poem_words pw on p.poem_id=pw.poem_id
 join poems_word w on w.word_id=pw.word_id
 where w.word='удз' or w.word='епэр'
 order by p.title;
+
+select p.poem_id, p.title, w.word, w.eng_transl
+from poems_poem p
+join poems_poem_words pw on p.poem_id=pw.poem_id
+join poems_word w on w.word_id=pw.word_id
+where w.word='нобэ'
+order by p.title;
+
+/*
+ poem_id |             title             | word |                eng_transl                
+---------+-------------------------------+------+------------------------------------------
+      29 | Адыгэпсэм и хъуэпсапIэ        | нобэ | 1. today 2. now, at present, in our days
+      36 | Анэшхуэ жьэгу                 | нобэ | 1. today 2. now, at present, in our days
+      31 | Гъатхэ жэщхэм умыжей          | нобэ | 1. today 2. now, at present, in our days
+      32 | Ей, дунеижьурэ дыгъужь нэщIа… | нобэ | 1. today 2. now, at present, in our days
+      28 | Къосыр уэс…                   | нобэ | 1. today 2. now, at present, in our days
+      88 | Нэф                           | нобэ | 1. today 2. now, at present, in our days
+      61 | Сонет                         | нобэ | 1. today 2. now, at present, in our days
+      70 | Сымыгупсысэу сыщыпсалъэ...    | нобэ | 1. today 2. now, at present, in our days
+      71 | ЩIы фIыцIэм                   | нобэ | 1. today 2. now, at present, in our days
+(9 rows) */
 ```
+
+
+
+
 
