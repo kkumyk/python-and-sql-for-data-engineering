@@ -4,3 +4,4 @@ __pycache__
 .pytest_cache
 [2-8].py
 00.md
+sql.md

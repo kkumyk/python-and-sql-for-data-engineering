@@ -1,5 +1,18 @@
 # [PostgreSQL for Everybody (PG4E)](https://www.pg4e.com/lessons/) Notes
 
+## [Text in PostgreSQL](https://www.pg4e.com/lessons/week4#)
+
+Handling text in PostgreSQL (but not Natural Language).
+
+- create some text data with Postgres functions
+
+```sql
+
+```
+
+
+
+
 ## TIMESTAMPZ - Best Practice 
 - store timestamps with timezone
 - prefer UTC (Coordinated Universal Time) for stored timestamps
