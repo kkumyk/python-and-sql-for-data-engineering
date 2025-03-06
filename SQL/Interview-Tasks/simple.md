@@ -20,17 +20,17 @@ select name from Customer where referee_id != 2 or referee_id is null
 1415 Students and Examinations
 
 ```sql
-SELECT  st.student_id,
-        st.student_name,
-        s.subject_name,
-        COUNT(e.student_id) AS attended_exams
+SELECT st.student_id,
+       st.student_name,
+       sub.subject_name,
+       COUNT(e.student_id) AS attended_exams
 FROM students st
-CROSS JOIN subjects s
+CROSS JOIN subjects sub
 LEFT JOIN examinations e
     ON st.student_id = e.student_id
-    AND e.subject_name = s.subject_name
-GROUP BY st.student_id, st.student_name, s.subject_name
-ORDER BY st.student_id, st.student_name, s.subject_name;
+    AND e.subject_name = sub.subject_name
+GROUP BY st.student_id, st.student_name, sub.subject_name
+ORDER BY st.student_id, sub.subject_name;
 ```
 
 [1148. Article Views I](https://leetcode.com/problems/article-views-i/)
@@ -157,3 +157,45 @@ select p.product_name, s.year, s.price from Product p join Sales s on p.product_
 select v.customer_id, count(*) as count_no_trans from visits v LEFT JOIN transactions t on v.visit_id=t.visit_id where t.transaction_id is null group by v.customer_id
 ```
 
+[197. Rising Temperature](https://leetcode.com/problems/rising-temperature/)
+```sql
+select today.id from Weather yesterday cross join Weather today where today.recorddate - yesterday.recorddate = 1 and today.temperature > yesterday.temperature 
+```
+
+[577. Employee Bonus](https://leetcode.com/problems/employee-bonus/)
+```sql
+select e.name, b.bonus from employee e left join bonus b on e.empId=b.empId where bonus < 1000 or bonus is null
+```
+
+[1661. Average Time of Process per Machine](https://leetcode.com/problems/average-time-of-process-per-machine/)
+```sql
+SELECT  machine_id,
+        ROUND(
+            AVG(
+            CASE 
+                WHEN activity_type = 'start' THEN -timestamp 
+                ELSE timestamp
+            END)::decimal * 2
+            , 3) AS processing_time
+FROM Activity
+GROUP BY machine_id
+ORDER BY machine_id ASC;
+```
+
+<!-- This query is more concise and might execute faster because it avoids a self-join and processes the data in a single pass.
+It uses a CASE statement within an aggregate function (AVG) to compute the average processing time directly. 
+
+Transforming start and end Timestamps in One Step:
+    CASE WHEN activity_type = 'start' THEN -timestamp ELSE timestamp END
+    This inverts start timestamps by making them negative while keeping end timestamps positive.
+
+Summing Over Each machine_id and Averaging
+    Since each (machine_id, process_id) pair has exactly one start and one end, summing them within AVG() results in:
+    AVG(end−start)
+    AVG(end−start)
+    Multiplying by 2 compensates for the effect of averaging over two rows per process (one start and one end).
+
+Using ROUND(..., 3) with Explicit Casting
+    ::decimal * 2 ensures correct rounding behavior in PostgreSQL.
+
+-->
