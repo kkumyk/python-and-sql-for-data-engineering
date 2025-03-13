@@ -199,3 +199,16 @@ Using ROUND(..., 3) with Explicit Casting
     ::decimal * 2 ensures correct rounding behavior in PostgreSQL.
 
 -->
+
+[620. Not Boring Movies](https://leetcode.com/problems/not-boring-movies/description/)
+```sql
+SELECT id, movie, description, rating
+FROM Cinema
+WHERE id%2 != 0 AND description != 'boring'
+ORDER BY rating DESC
+
+SELECT id, movie, description, rating
+FROM Cinema
+WHERE id % 2 = 1 AND description != 'boring'
+ORDER BY rating DESC;
+```
