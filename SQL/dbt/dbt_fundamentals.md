@@ -68,6 +68,32 @@ Dimension (dim) refers to data that represents a person, place or thing.
 - dbt is a tool for how to build these rather than enforcing what to build.
 
 
+### Test Questions
+You are working in the dbt Cloud IDE. How do you ensure the model you have created is built in your data platform?
+
+- run dbt run
+- it executes the SQL models in your dbt project and materializes them in your data platform
+
+
+What are two functions of a staging model in dbt?
+
+- a. Perform light transformations on your data set
+- b. Connect to upstream sources using the source macro
+
+
+What are two functions of a marts model in dbt?
+
+- c. Apply business logic for stakeholders
+- d. Reference upstream models using the ref macro
+
+
+You want all models in a folder to be materialized as tables. Where can you accomplish this?
+- in the dbt_project.yml file
+
+Which of the following is a benefit of using subdirectories in your models directory?
+- a. Subdirectories allow you to configure materializations at the folder level for a collection of models
+- Subdirectories in your models directory help organize your dbt project. One of the benefits is that you can configure materializations at the folder level, meaning you can apply the same materialization (e.g., table, view) for all models within that subdirectory. This can help maintain consistency for groups of models.
+
 
 
 
