@@ -212,3 +212,18 @@ FROM Cinema
 WHERE id % 2 = 1 AND description != 'boring'
 ORDER BY rating DESC;
 ```
+
+[1075. Project Employees I](https://leetcode.com/problems/project-employees-i/description/)
+```sql
+select p.project_id,
+round(sum(e.experience_years)/count(p.project_id)::numeric, 2) as average_years
+from Project p
+join Employee e
+on e.employee_id=p.employee_id
+group by project_id
+
+select project_id,round(avg(experience_years)::numeric,2) as average_years
+from Project p
+left join Employee e on e.employee_id=p.employee_id
+Group by project_id order by project_id;
+```
