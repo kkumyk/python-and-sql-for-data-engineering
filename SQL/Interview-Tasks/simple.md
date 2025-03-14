@@ -222,8 +222,19 @@ join Employee e
 on e.employee_id=p.employee_id
 group by project_id
 
+
 select project_id,round(avg(experience_years)::numeric,2) as average_years
 from Project p
 left join Employee e on e.employee_id=p.employee_id
 Group by project_id order by project_id;
+```
+
+[1633. Percentage of Users Attended a Contest](https://leetcode.com/problems/percentage-of-users-attended-a-contest/description/)
+```sql
+SELECT 
+    r.contest_id, 
+    ROUND(COUNT(DISTINCT r.user_id) * 100.0 / (SELECT COUNT(*) FROM Users), 2) AS percentage
+FROM Register r
+GROUP BY r.contest_id
+ORDER BY percentage DESC, contest_id ASC;
 ```
