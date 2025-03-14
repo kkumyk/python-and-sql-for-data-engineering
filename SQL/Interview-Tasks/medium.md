@@ -17,3 +17,46 @@ LEFT JOIN Confirmations c
 ON s.user_id=c.user_id
 GROUP BY s.user_id
 ```
+
+[1251. Average Selling Price](https://leetcode.com/problems/average-selling-price/description/)
+```sql
+SELECT p.product_id, COALESCE(ROUND(SUM(u.units*p.price)/SUM(u.units)::decimal, 2), 0) as average_price
+FROM Prices p
+LEFT JOIN UnitsSold u
+ON u.product_id = p.product_id AND u.purchase_date BETWEEN p.start_date AND p.end_date
+GROUP BY p.product_id
+
+-- Runtime: 182 ms - slightly slower due to how it handles null values and data type conversions
+
+----------------------------------------------
+-- SQL queries execute in the following order:
+
+--     FROM & JOIN: Combines Prices and UnitsSold tables based on product_id and purchase_date.
+--     WHERE (ON condition in LEFT JOIN): Filters only valid price periods for each sale.
+--     GROUP BY: Groups by product_id to aggregate values.
+--     SELECT: Computes the average_price calculation.
+--     CASE & COALESCE: Handles cases where a product has no sales.
+--     ROUND(): Ensures output has 2 decimal places.
+
+    SELECT 
+        p.product_id,
+        CASE
+            WHEN SUM(u.units) is null
+            THEN 0
+            ELSE
+                ROUND(SUM(u.units * p.price) / SUM(u.units)::numeric, 2)
+        END
+        AS average_price
+    FROM 
+        Prices p
+LEFT JOIN 
+    UnitsSold u
+ON 
+    u.product_id = p.product_id 
+    AND u.purchase_date BETWEEN p.start_date AND p.end_date
+GROUP BY 
+    p.product_id;
+
+-- Runtime: 176 ms
+```
+
