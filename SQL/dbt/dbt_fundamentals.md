@@ -95,6 +95,75 @@ Which of the following is a benefit of using subdirectories in your models direc
 - Subdirectories in your models directory help organize your dbt project. One of the benefits is that you can configure materializations at the folder level, meaning you can apply the same materialization (e.g., table, view) for all models within that subdirectory. This can help maintain consistency for groups of models.
 
 
+## Sources
+
+### What are Sources?
+- you always start with raw data
+- sources represent the raw data that is loaded into the data warehouse
+- best way to ref sources with <code>source</code> function which enables:
+    - configure multiple tables from a single source
+    - freshness thresholds can be set in the YML file where sources are configured
+    - for each table, the keys loaded_at_field and freshness must be configured:
+    ```yml
+    version: 2
+
+    sources:
+    - name: jaffle_shop
+        database: raw
+        schema: jaffle_shop
+        tables:
+        - name: orders
+            loaded_at_field: _etl_loaded_at
+            freshness:
+            warn_after: {count: 12, period: hour}
+            error_after: {count: 24, period: hour}
+    ```
+    - use <code>dbt source freshness</code> to check the freshness of raw table.
+    - the Lineage Graph will represent the sources in green
+
+### Tests
+- data tests can be applied on models or directly on data sources
+- data tests - assertions
+- data tests constructed in development; they help validate models
+- data tests are in the same code base as your modles
+- two types of dbt tests:
+    - singular
+        - Singular tests are data tests defined by writing specific SQL queries that return records which fail the test conditions. These tests are referred to as "singular" because they are one-off assertions that are uniquely designed for a single purpose or specific scenario within the data models.
+        - test specific models with custom SQL
+    - (four built-in) generic:
+        - Generic tests are a way to validate your data models and ensure data quality. These tests are predefined and can be applied to any column of your data models to check for common data issues. They are written in YAML files.
+        - unique - use on primary keys
+        - not_null - use on primary keys
+        - relationshipts - asserts that every value in a column exists in the column of another table to maintain referential integrety
+        - accepted_values - asserts that every value in the column exist in a predefined list
+    - basic tests
+    - can be applied broadly thoughout the project
+
+#### dbt Commands
+
+- Execute <code>dbt test</code> to run all generic and singular tests in your project.
+- Execute <code>dbt test --select test_type:generic</code> to run only generic tests in your project.
+- Execute <code>dbt test --select test_type:singular</code> to run only singular tests in your project.
+
+- To run tests on one source (and all of its tables):
+```bash
+dbt test --select source:jaffle_shop`
+```
+- And, to run tests on one source table only:
+```bash
+dbt test --select source:jaffle_shop.orders
+```
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -106,8 +175,15 @@ Which of the following is a benefit of using subdirectories in your models direc
 
 
 <!--
+https://www.getdbt.com/certifications/analytics-engineer-certification-exam
+https://quizlet.com/489070274/dbt-certification-practice-exam-questions-flash-cards/
+https://www.qanalabs.com/pages/free-dbt-practice-exam
 https://www.getdbt.com/dbt-certification
 https://www.getdbt.com/dbt-assets/certifications/dbt-certificate-study-guide
+https://discourse.getdbt.com/t/dbt-analytics-engineering-exam-preparation/13371
+https://medium.com/@nishadpatkar7/data-build-tool-dbt-interview-questions-and-answers-107f6799c7a3
+
+
 
 https://www.reddit.com/r/snowflake/comments/1bmdlsv/why_is_dbt_so_popular_with_snowflake_seems_like/?rdt=60846
 https://www.linkedin.com/posts/ephraim-ebong_dataengineering-snowflake-apacheairflow-activity-7303124610881847297-u3UJ
