@@ -238,3 +238,21 @@ FROM Register r
 GROUP BY r.contest_id
 ORDER BY percentage DESC, contest_id ASC;
 ```
+
+[1211. Queries Quality and Percentage](https://leetcode.com/problems/queries-quality-and-percentage/description/)
+
+```sql
+with query_stats as (
+    select query_name,
+    sum(rating::numeric/position) as total_quality, -- Dog: (5/1) + (5/2) + (1/200) = 7.505
+    count(*) as total_queries, -- Dog: 3 queries
+    count(*) filter(where rating < 3) as poor_queries -- Dog: 1 (1/200 row)
+    from queries
+    group by query_name
+)
+select
+    query_name,
+    round(total_quality / total_queries, 2) as quality,
+    round(100.0 * poor_queries / total_queries, 2) as poor_query_percentage
+from query_stats;
+```
