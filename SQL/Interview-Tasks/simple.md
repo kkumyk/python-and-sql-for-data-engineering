@@ -256,3 +256,12 @@ select
     round(100.0 * poor_queries / total_queries, 2) as poor_query_percentage
 from query_stats;
 ```
+
+[2356. Number of Unique Subjects Taught by Each Teacher](https://leetcode.com/problems/number-of-unique-subjects-taught-by-each-teacher/description/)
+```sql
+select
+    teacher_id,
+    count(distinct(subject_id)) as cnt
+from Teacher
+group by teacher_id
+```
