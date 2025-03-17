@@ -100,11 +100,21 @@ Which of the following is a benefit of using subdirectories in your models direc
 
 
 
+
+
+
+
+
 <!--
+https://www.getdbt.com/dbt-certification
+https://www.getdbt.com/dbt-assets/certifications/dbt-certificate-study-guide
 
 https://www.reddit.com/r/snowflake/comments/1bmdlsv/why_is_dbt_so_popular_with_snowflake_seems_like/?rdt=60846
 https://www.linkedin.com/posts/ephraim-ebong_dataengineering-snowflake-apacheairflow-activity-7303124610881847297-u3UJ
 https://www.linkedin.com/search/results/all/?keywords=dbt%20snowflake&origin=GLOBAL_SEARCH_HEADER&page=3&sid=RbK
 https://www.linkedin.com/pulse/end-to-end-data-pipeline-snowflake-airflow-dbt-nguy%25E1%25BB%2585n-tu%25E1%25BA%25A5n-d%25C6%25B0%25C6%25A1ng-8vjzc/
+
+
+https://dbtips.substack.com/p/running-dbt-with-airflow
 
  -->
