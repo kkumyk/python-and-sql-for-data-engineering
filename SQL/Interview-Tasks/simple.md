@@ -276,3 +276,19 @@ from Activity
 where activity_date between (date('2019-07-27') - interval '29' day) and date('2019-07-27')
 group by activity_date
 ```
+
+[596. Classes More Than 5 Students](https://leetcode.com/problems/classes-more-than-5-students/description/)
+```sql
+select class
+from Courses
+group by class
+having count(student) >= 5
+```
+
+[1729. Find Followers Count](https://leetcode.com/problems/find-followers-count/description/)
+```sql
+select user_id, count(follower_id) as followers_count
+from Followers
+group by user_id
+order by user_id asc
+```
