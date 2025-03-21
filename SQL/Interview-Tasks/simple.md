@@ -292,3 +292,46 @@ from Followers
 group by user_id
 order by user_id asc
 ```
+
+[619. Biggest Single Number](https://leetcode.com/problems/biggest-single-number/description/)
+
+```sql
+with pre_processing as (
+    select num
+    from MyNumbers
+    group by num
+    having count(num)=1
+)
+select max(num) as num
+from pre_processing
+```
+
+[1978. Employees Whose Manager Left the Company](https://leetcode.com/problems/employees-whose-manager-left-the-company/description/)
+```sql
+select employee_id from Employees
+where manager_id not in (select employee_id from Employees)
+and salary < 30000
+order by employee_id
+```
+
+[1731. The Number of Employees Which Report to Each Employee](https://leetcode.com/problems/the-number-of-employees-which-report-to-each-employee/description/)
+```sql
+select
+    e.reports_to as employee_id,
+    m.name,
+    count(e.employee_id) as reports_count,
+    round(avg(e.age)) as average_age
+from Employees e
+join Employees m on m.employee_id = e.reports_to
+where e.reports_to <> 0
+group by e.reports_to, m.name
+order by e.reports_to
+
+
+select f.employee_id, f.name, count(1) as reports_count, ROUND(AVG(e.age), 0) as average_age
+from Employees e
+JOIN Employees f
+ON e.reports_to = f.employee_id
+group by f.employee_id, f.name
+order by f.employee_id
+```
