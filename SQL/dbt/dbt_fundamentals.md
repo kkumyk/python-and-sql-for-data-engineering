@@ -154,6 +154,16 @@ dbt test --select source:jaffle_shop`
 dbt test --select source:jaffle_shop.orders
 ```
 
+### Documentation
+
+- In dbt, models are built in SQL files. These models are documented in YML files that live in the same folder as the models.
+- Documentation of models occurs in the YML files (where generic tests also live) inside the models directory. It is helpful to store the YML file in the same subfolder as the models you are documenting.
+- For models, descriptions can happen at the model, source, or column level.
+- If a longer form, more styled version of text would provide a strong description, doc blocks can be used to render markdown in the generated documentation.
+- <code>dbt docs</code> generate. This will refresh the `view docs` link in the top left corner of the Cloud IDE.
+- 
+
+
 
 
 
