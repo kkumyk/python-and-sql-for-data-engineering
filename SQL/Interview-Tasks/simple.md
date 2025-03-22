@@ -1,93 +1,33 @@
-[1757. Recyclable and Low Fat Products](https://leetcode.com/problems/recyclable-and-low-fat-products/)
-
-```sql
-select product_id from Products where low_fats = 'Y' and recyclable = 'Y'
-```
-
-[584. Find Customer Referee](https://leetcode.com/problems/find-customer-referee/description/)
-
-In SQL, the != (or <>) operator does not compare NULL values because NULL represents an unknown value. In SQL, any comparison with NULL results in NULL (which is treated as unknown or false in a WHERE clause).
-
-If referee_id is NULL, the condition becomes NULL != 2, which results in NULL.
-Since SQL ignores NULL in WHERE conditions (it is neither TRUE nor FALSE), rows where referee_id is NULL are not included in the result.
-
-To handle NULL values in comparisons, use IS NULL or IS NOT NULL explicitly.
-
-```sql
-select name from Customer where referee_id != 2 or referee_id is null
-```
-
-1415 Students and Examinations
-
-```sql
-SELECT st.student_id,
-       st.student_name,
-       sub.subject_name,
-       COUNT(e.student_id) AS attended_exams
-FROM students st
-CROSS JOIN subjects sub
-LEFT JOIN examinations e
-    ON st.student_id = e.student_id
-    AND e.subject_name = sub.subject_name
-GROUP BY st.student_id, st.student_name, sub.subject_name
-ORDER BY st.student_id, sub.subject_name;
-```
-
-[1148. Article Views I](https://leetcode.com/problems/article-views-i/)
-
-<!-- +---------------+---------+
-| Column Name   | Type    |
-+---------------+---------+
-| article_id    | int     |
-| author_id     | int     |
-| viewer_id     | int     |
-| view_date     | date    |
-+---------------+---------+
-There is no primary key (column with unique values) for this table, the table may have duplicate rows.
-Each row of this table indicates that some viewer viewed an article (written by some author) on some date. 
-
-Note that equal author_id and viewer_id indicate the same person.
-
-Write a solution to find all the authors that viewed at least one of their own articles.
-
-Return the result table sorted by id in ascending order.
-
-The result format is in the following example.
-
-Input: 
-Views table:
-+------------+-----------+-----------+------------+
-| article_id | author_id | viewer_id | view_date  |
-+------------+-----------+-----------+------------+
-| 1          | 3         | 5         | 2019-08-01 |
-| 1          | 3         | 6         | 2019-08-02 |
-| 2          | 7         | 7         | 2019-08-01 |
-| 2          | 7         | 6         | 2019-08-02 |
-| 4          | 7         | 1         | 2019-07-22 |
-| 3          | 4         | 4         | 2019-07-21 |
-| 3          | 4         | 4         | 2019-07-21 |
-+------------+-----------+-----------+------------+
-Output: 
-+------+
-| id   |
-+------+
-| 4    |
-| 7    |
-+------+
--->
-
-```sql
-select author_id as id from Views where author_id=viewer_id group by id order by id
-
-select distinct author_id id from Views where author_id=viewer_id order by author_id
-```
 
 [1683. Invalid Tweets](https://leetcode.com/problems/invalid-tweets/)
+```sql
+-- LENGTH(string)
+-- Returns the number of bytes in the given string.
+-- If the string contains multi-byte characters, the length will be greater than the number of characters.
+select tweet_id from Tweets where length(content)>15
+
+-- CHAR_LENGTH(string) / CHARACTER_LENGTH(string)
+-- Returns the number of characters in the given string.
+-- This is useful for handling multi-byte characters correctly.
+select tweet_id
+from tweets
+where char_length(content) > 15;
+```
+[1415 Students and Examinations](https://leetcode.com/problems/students-and-examinations/description/)
 
 ```sql
-select tweet_id from Tweets where length(content)>15
+SELECT s.student_id,
+       s.student_name,
+       sub.subject_name,
+       COUNT(e.student_id) AS attended_exams
+FROM students s
+CROSS JOIN subjects sub
+LEFT JOIN examinations e
+    ON s.student_id = e.student_id
+    AND e.subject_name = sub.subject_name
+GROUP BY s.student_id, s.student_name, sub.subject_name
+ORDER BY s.student_id, sub.subject_name;
 ```
-
 [595. Big Countries](https://leetcode.com/problems/big-countries/)
 ```sql
 select name, population, area from World where area>=3000000 or population>=25000000
@@ -334,4 +274,78 @@ JOIN Employees f
 ON e.reports_to = f.employee_id
 group by f.employee_id, f.name
 order by f.employee_id
+```
+
+
+[1789. Primary Department for Each Employee](https://leetcode.com/problems/primary-department-for-each-employee/)
+```sql
+with ids as (select e.employee_id
+from Employee e
+group by e.employee_id
+having count(e.employee_id)=1
+)
+select i.employee_id, e.department_id
+from ids i
+left join Employee e on i.employee_id=e.employee_id
+union all
+select employee_id, department_id
+from Employee
+where primary_flag='Y'
+
+
+SELECT employee_id, department_id FROM Employee WHERE employee_id IN (
+SELECT employee_id FROM Employee
+GROUP BY employee_id HAVING COUNT(*) =1) OR primary_flag = 'Y'
+```
+
+
+[610. Triangle Judgement](https://leetcode.com/problems/triangle-judgement/description/)
+```sql
+select x, y, z, 
+case
+    when x+y>z and y+z>x and z+x> y then 'Yes' else 'No'
+end as triangle
+from triangle
+```
+
+[1667. Fix Names in a Table](https://leetcode.com/problems/fix-names-in-a-table/description/)
+```sql
+select user_id,
+upper(substring(name from 1 for 1)) || lower(substring(name from 2)) as name
+from Users order by user_id
+```
+
+
+### Revised
+
+[1757. Recyclable and Low Fat Products](https://leetcode.com/problems/recyclable-and-low-fat-products/)
+
+```sql
+select product_id from Products where low_fats = 'Y' and recyclable = 'Y'
+```
+
+[584. Find Customer Referee](https://leetcode.com/problems/find-customer-referee/description/)
+
+In SQL, the != (or <>) operator does not compare NULL values because NULL represents an unknown value. In SQL, any comparison with NULL results in NULL (which is treated as unknown or false in a WHERE clause).
+
+If referee_id is NULL, the condition becomes NULL != 2, which results in NULL.
+Since SQL ignores NULL in WHERE conditions (it is neither TRUE nor FALSE), rows where referee_id is NULL are not included in the result.
+
+To handle NULL values in comparisons, use IS NULL or IS NOT NULL explicitly.
+
+```sql
+select name from Customer where referee_id != 2 or referee_id is null
+```
+
+[1148. Article Views I](https://leetcode.com/problems/article-views-i/)
+
+```sql
+select author_id as id from Views where author_id=viewer_id group by id order by id
+
+select distinct author_id id from Views where author_id=viewer_id order by author_id
+
+select author_id as id
+from Views
+where author_id=viewer_id
+group by author_id
 ```
