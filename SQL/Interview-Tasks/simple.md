@@ -1,18 +1,10 @@
-
-[1683. Invalid Tweets](https://leetcode.com/problems/invalid-tweets/)
+[1378. Replace Employee ID With The Unique Identifier](https://leetcode.com/problems/replace-employee-id-with-the-unique-identifier/)
 ```sql
--- LENGTH(string)
--- Returns the number of bytes in the given string.
--- If the string contains multi-byte characters, the length will be greater than the number of characters.
-select tweet_id from Tweets where length(content)>15
-
--- CHAR_LENGTH(string) / CHARACTER_LENGTH(string)
--- Returns the number of characters in the given string.
--- This is useful for handling multi-byte characters correctly.
-select tweet_id
-from tweets
-where char_length(content) > 15;
+select eu.unique_id, e.name from Employees e left join EmployeeUNI eu on eu.id=e.id 
 ```
+Using <code>LEFT JOIN</code> ensures that we get all employees even if they don't have a corresponding entry in the employeeuni table. In no match was found "NULL" will be retured for the unique_id.
+
+
 [1415 Students and Examinations](https://leetcode.com/problems/students-and-examinations/description/)
 
 ```sql
@@ -28,63 +20,6 @@ LEFT JOIN examinations e
 GROUP BY s.student_id, s.student_name, sub.subject_name
 ORDER BY s.student_id, sub.subject_name;
 ```
-[595. Big Countries](https://leetcode.com/problems/big-countries/)
-```sql
-select name, population, area from World where area>=3000000 or population>=25000000
-```
-
-[1378. Replace Employee ID With The Unique Identifier](https://leetcode.com/problems/replace-employee-id-with-the-unique-identifier/)
-```sql
-select eu.unique_id, e.name from Employees e left join EmployeeUNI eu on eu.id=e.id 
-```
-<!-- Table: Employees
-
-+---------------+---------+
-| Column Name   | Type    |
-+---------------+---------+
-| id            | int     |
-| name          | varchar |
-+---------------+---------+
-
-Table: EmployeeUNI
-
-+---------------+---------+
-| Column Name   | Type    |
-+---------------+---------+
-| id            | int     |
-| unique_id     | int     |
-+---------------+---------+ 
-
-Input: 
-Employees table:
-+----+----------+
-| id | name     |
-+----+----------+
-| 1  | Alice    |
-| 7  | Bob      |
-| 11 | Meir     |
-| 90 | Winston  |
-| 3  | Jonathan |
-+----+----------+
-EmployeeUNI table:
-+----+-----------+
-| id | unique_id |
-+----+-----------+
-| 3  | 1         |
-| 11 | 2         |
-| 90 | 3         |
-+----+-----------+
-Output: 
-+-----------+----------+
-| unique_id | name     |
-+-----------+----------+
-| null      | Alice    |
-| null      | Bob      |
-| 2         | Meir     |
-| 3         | Winston  |
-| 1         | Jonathan |
-+-----------+----------+ -->
-Using <code>LEFT JOIN</code> ensures that we get all employees even if they don't have a corresponding entry in the employeeuni table. In no match was found "NULL" will be retured for the unique_id.
 
 [1068. Product Sales Analysis I](https://leetcode.com/problems/product-sales-analysis-i/)
 
@@ -105,6 +40,11 @@ select today.id from Weather yesterday cross join Weather today where today.reco
 [577. Employee Bonus](https://leetcode.com/problems/employee-bonus/)
 ```sql
 select e.name, b.bonus from employee e left join bonus b on e.empId=b.empId where bonus < 1000 or bonus is null
+```
+
+[595. Big Countries](https://leetcode.com/problems/big-countries/)
+```sql
+select name, population, area from World where area>=3000000 or population>=25000000
 ```
 
 [1661. Average Time of Process per Machine](https://leetcode.com/problems/average-time-of-process-per-machine/)
@@ -315,6 +255,38 @@ upper(substring(name from 1 for 1)) || lower(substring(name from 2)) as name
 from Users order by user_id
 ```
 
+[Patients with a condition](https://leetcode.com/problems/patients-with-a-condition/description/)
+
+```sql
+select patient_id, patient_name, conditions
+from patients
+where conditions like 'DIAB1%' or conditions like '% DIAB1%'
+```
+
+[196. Delete Duplicate Emails](https://leetcode.com/problems/delete-duplicate-emails/description/)
+```sql
+delete from person
+where id not in (select min(id) from person group by email)
+```
+
+[1484. Group Sold Products By The Date](https://leetcode.com/problems/group-sold-products-by-the-date/description/)
+
+```sql
+select sell_date, count(distinct product) as num_sold,
+string_agg(distinct product, ',' order by product) as products
+from activities
+group by sell_date
+order by sell_date
+```
+
+
+
+
+
+
+
+
+
 
 ### Revised
 
@@ -348,4 +320,20 @@ select author_id as id
 from Views
 where author_id=viewer_id
 group by author_id
+```
+
+
+[1683. Invalid Tweets](https://leetcode.com/problems/invalid-tweets/)
+```sql
+-- LENGTH(string)
+-- Returns the number of bytes in the given string.
+-- If the string contains multi-byte characters, the length will be greater than the number of characters.
+select tweet_id from Tweets where length(content)>15
+
+-- CHAR_LENGTH(string) / CHARACTER_LENGTH(string)
+-- Returns the number of characters in the given string.
+-- This is useful for handling multi-byte characters correctly.
+select tweet_id
+from tweets
+where char_length(content) > 15;
 ```
