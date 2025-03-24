@@ -1,9 +1,12 @@
 [1378. Replace Employee ID With The Unique Identifier](https://leetcode.com/problems/replace-employee-id-with-the-unique-identifier/)
+
 ```sql
-select eu.unique_id, e.name from Employees e left join EmployeeUNI eu on eu.id=e.id 
+select eu.unique_id, e.name
+from Employees e
+left join EmployeeUNI eu
+on eu.id=e.id 
 ```
 Using <code>LEFT JOIN</code> ensures that we get all employees even if they don't have a corresponding entry in the employeeuni table. In no match was found "NULL" will be retured for the unique_id.
-
 
 [1415 Students and Examinations](https://leetcode.com/problems/students-and-examinations/description/)
 
@@ -19,12 +22,6 @@ LEFT JOIN examinations e
     AND e.subject_name = sub.subject_name
 GROUP BY s.student_id, s.student_name, sub.subject_name
 ORDER BY s.student_id, sub.subject_name;
-```
-
-[1068. Product Sales Analysis I](https://leetcode.com/problems/product-sales-analysis-i/)
-
-```sql
-select p.product_name, s.year, s.price from Product p join Sales s on p.product_id=s.product_id order by s.year 
 ```
 
 [1581. Customer Who Visited but Did Not Make Any Transactions](https://leetcode.com/problems/customer-who-visited-but-did-not-make-any-transactions/)
@@ -279,11 +276,70 @@ group by sell_date
 order by sell_date
 ```
 
+[1193. Monthly Transactions I](https://leetcode.com/problems/monthly-transactions-i/description/)
+
+```sql
+select 
+    to_char(trans_date, 'YYYY-MM') as month,
+    country,
+    count(*) as trans_count,
+    sum(case when state='approved' then 1 else 0 end) as approved_count,
+    sum(amount) as trans_total_amount,
+    sum(case when state ='approved' then amount else 0 end) as approved_total_amount
+from transactions
+group by month, country 
+```
+
+[1174. Immediate Food Delivery II](https://leetcode.com/problems/immediate-food-delivery-ii/description/)
+
+```sql
+select round(avg(case when order_date = customer_pref_delivery_date then 1
+                else 0 end) * 100, 2) as immediate_percentage
+from delivery
+where (customer_id, order_date) in (
+                select customer_id,
+                    min(order_date)
+                    from delivery
+                    group by customer_id
+);
+```
+
+[550. Game Play Analysis IV](https://leetcode.com/problems/game-play-analysis-iv/description/)
+
+```sql
+select round(
+    1.0 * count(player_id) / 
+    (select count(distinct player_id)
+    from activity), 2) as fraction
+from activity
+where (player_id, event_date) in (
+    select player_id, min(event_date) + 1
+    from activity
+    group by player_id
+);
+
+with cte as (
+    select count(distinct player_id) as active_user
+    from (
+        select *,
+               rank() over (partition by player_id order by event_date asc) as rank,
+               lag(event_date) over (partition by player_id order by event_date asc) as lag_date
+        from activity
+    ) as x 
+    where x.rank <= 2 
+          and event_date = lag_date + interval '1 day'
+),
+cte2 as (
+    select count(distinct player_id) as total_user 
+    from activity
+)
+
+select round(active_user * 1.0 / total_user, 2) as fraction 
+from cte, cte2;
 
 
 
-
-
+```
 
 
 
@@ -336,4 +392,26 @@ select tweet_id from Tweets where length(content)>15
 select tweet_id
 from tweets
 where char_length(content) > 15;
+```
+
+[1068. Product Sales Analysis I](https://leetcode.com/problems/product-sales-analysis-i/)
+
+```sql
+-- INNER JOIN retrieves only matching rows from both tables.
+select p.product_name, s.year, s.price
+from Product p
+join Sales s
+on p.product_id=s.product_id
+order by s.year 
+
+-- LEFT JOIN - slightly slower than INNER JOIN due to additional data retrieval.
+-- If a product_id is missing in Product, product_name will be NULL in the output.
+-- LEFT JOIN might be slightly slower since it includes unmatched rows.
+select p.product_name, s.year, s.price
+from Sales s
+left join Product p
+on s.product_id=p.product_id
+
+-- If all product_ids in Sales exist in Product, INNER JOIN is more efficient in both time and space.
+-- If some product_ids in Sales may not exist in Product, and we still want those rows, use LEFT JOIN.
 ```
