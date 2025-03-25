@@ -604,3 +604,97 @@ Three types of actions can be set:
 - Access is assigned via **GRANT** and follows a hierarchical structure.
 - **AccountAdmin** is the most powerful role, while **SysAdmin** is responsible for object management.
 - The **OrgAdmin** role operates at a higher, organizational level.
+
+<hr>
+
+## Loading Data
+
+Two load methods:
+  - bulk loading
+    - most frequent method
+    - uses warehouses
+    - loading from stages
+    - COPY command
+    - transformations possible
+  - continuous loading
+    - designed to load small volumes of data
+    - automatically once they are added to stages
+    - lates results for analysis
+    - Snowpipe (Severless feature)
+
+## Understanding Stages
+
+### Stages in Snowflake:
+
+- stages - DB objects in Snowflake that define the location where data files are stored and from which data can be loaded
+- stages define where data is stored (typically in cloud storage) and how to access it
+- focus on external stages for cloud-based storage solutions
+- watch out costs of data transfer, especially when working across regions and cloud providers
+- stage vs. staging area - watch the diff:
+    - in data warehousing, "staging" refers to temporary storage before processing
+    - in Snowflake, "stage" is a specific object used to load data from external locations
+
+- properties of a stage:
+  - location (e.g., AWS S3, GCS(Google Cloud Storage))
+  - credentials to access the location (e.g., access keys, permissions)
+
+- types of stages:
+  - external stage:
+    - the most common type, usually refers to cloud storage like AWS S3, Google Cloud, or Azure Blob 
+    
+  - internal stage:
+    - used when there's no access to external cloud providers, often for local file storage managed by Snowflake
+
+- cost considerations:
+   - data transfer between different regions or cloud providers may incur additional costs
+   - e.g.: transferring data out of Snowflake to another provider (e.g., Azure) can incur charges
+
+- usage:
+  - create stages using the CREATE STAGE command in Snowflake, typically within a database schema
+  - external stages are more common and involve cloud storage
+  - internal stages are used for local, Snowflake-managed storage
+
+```sql
+  -- Database to manage stage objects, fileformats etc.
+
+CREATE OR REPLACE DATABASE MANAGE_DB;
+
+CREATE OR REPLACE SCHEMA external_stages;
+
+
+-- Creating external stage
+
+CREATE OR REPLACE STAGE MANAGE_DB.external_stages.aws_stage
+    url='s3://bucketsnowflakes3'
+    credentials=(aws_key_id='ABCD_DUMMY_ID' aws_secret_key='1234abcd_key');
+
+
+-- Description of external stage
+
+DESC STAGE MANAGE_DB.external_stages.aws_stage; 
+    
+    
+-- Alter external stage   
+
+ALTER STAGE aws_stage
+    SET credentials=(aws_key_id='XYZ_DUMMY_ID' aws_secret_key='987xyz');
+    
+    
+-- Publicly accessible staging area    
+
+CREATE OR REPLACE STAGE MANAGE_DB.external_stages.aws_stage
+    url='s3://bucketsnowflakes3';
+
+-- List files in stage
+
+LIST @aws_stage;
+
+--Load data using copy command
+
+COPY INTO OUR_FIRST_DB.PUBLIC.ORDERS
+    FROM @aws_stage
+    file_format= (type = csv field_delimiter=',' skip_header=1)
+    pattern='.*Order.*';
+```
+
+
