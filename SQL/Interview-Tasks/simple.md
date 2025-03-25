@@ -1,13 +1,3 @@
-[1378. Replace Employee ID With The Unique Identifier](https://leetcode.com/problems/replace-employee-id-with-the-unique-identifier/)
-
-```sql
-select eu.unique_id, e.name
-from Employees e
-left join EmployeeUNI eu
-on eu.id=e.id 
-```
-Using <code>LEFT JOIN</code> ensures that we get all employees even if they don't have a corresponding entry in the employeeuni table. In no match was found "NULL" will be retured for the unique_id.
-
 [1415 Students and Examinations](https://leetcode.com/problems/students-and-examinations/description/)
 
 ```sql
@@ -25,8 +15,32 @@ ORDER BY s.student_id, sub.subject_name;
 ```
 
 [1581. Customer Who Visited but Did Not Make Any Transactions](https://leetcode.com/problems/customer-who-visited-but-did-not-make-any-transactions/)
+
 ```sql
-select v.customer_id, count(*) as count_no_trans from visits v LEFT JOIN transactions t on v.visit_id=t.visit_id where t.transaction_id is null group by v.customer_id
+-- join tables and filter nulls
+select v.customer_id, count(*) as count_no_trans
+from visits v
+left join transactions t
+on v.visit_id=t.visit_id
+where t.transaction_id is null
+group by v.customer_id
+
+-- exclude visits in transactions
+-- NOT IN makes clear that we only selecting visits that are not in transactions
+select customer_id, count(*) as count_no_trans
+from visits
+where visit_id not in (select visit_id from Transactions)
+group by customer_id
+
+-- a more efficient query for some DBs with NOT EXISTS
+-- NOT EXISTS here: Does a transaction exists for this visit? If not, count in. 
+
+select customer_id, count(*) as count_no_trans
+from visits v
+where not exists (
+    select 1 from Transactions t where t.visit_id=v.visit_id
+)
+group by customer_id
 ```
 
 [197. Rising Temperature](https://leetcode.com/problems/rising-temperature/)
@@ -260,22 +274,6 @@ from patients
 where conditions like 'DIAB1%' or conditions like '% DIAB1%'
 ```
 
-[196. Delete Duplicate Emails](https://leetcode.com/problems/delete-duplicate-emails/description/)
-```sql
-delete from person
-where id not in (select min(id) from person group by email)
-```
-
-[1484. Group Sold Products By The Date](https://leetcode.com/problems/group-sold-products-by-the-date/description/)
-
-```sql
-select sell_date, count(distinct product) as num_sold,
-string_agg(distinct product, ',' order by product) as products
-from activities
-group by sell_date
-order by sell_date
-```
-
 [1193. Monthly Transactions I](https://leetcode.com/problems/monthly-transactions-i/description/)
 
 ```sql
@@ -290,6 +288,45 @@ from transactions
 group by month, country 
 ```
 
+[196. Delete Duplicate Emails](https://leetcode.com/problems/delete-duplicate-emails/description/)
+```sql
+    delete from person
+    where id not in (
+        select min(id)
+        from person
+        group by email)
+
+with min_ids as (
+    select min(id) as keep_id from person group by email
+)
+delete from person
+where id not in (select keep_id from min_ids)
+```
+
+[1484. Group Sold Products By The Date](https://leetcode.com/problems/group-sold-products-by-the-date/description/)
+
+```sql
+select
+    sell_date,
+    count(distinct product) as num_sold,
+    string_agg(distinct product, ',' order by product) as products
+from activities
+group by sell_date
+order by sell_date
+
+
+select
+    sell_date,
+    count(distinct product) as num_sold,
+    string_agg(product, ',' order by product) as products
+from (
+    select distinct sell_date, product fro activities
+) sub
+group by sell_date
+order by sell_date
+```
+
+
 [1174. Immediate Food Delivery II](https://leetcode.com/problems/immediate-food-delivery-ii/description/)
 
 ```sql
@@ -301,50 +338,90 @@ where (customer_id, order_date) in (
                     min(order_date)
                     from delivery
                     group by customer_id
-);
+)
+
+
+select round(avg(case
+                    when order_date = customer_pref_delivery_date then 1
+                    else 0
+                end) * 100, 2) as immediate_percentage
+from delivery d
+where order_date = (
+    select min(order_date)
+    from delivery d2
+    where d.customer_id=d2.customer_id
+)
 ```
 
 [550. Game Play Analysis IV](https://leetcode.com/problems/game-play-analysis-iv/description/)
 
 ```sql
-select round(
-    1.0 * count(player_id) / 
-    (select count(distinct player_id)
-    from activity), 2) as fraction
-from activity
-where (player_id, event_date) in (
-    select player_id, min(event_date) + 1
-    from activity
-    group by player_id
-);
-
 with cte as (
-    select count(distinct player_id) as active_user
+    select
+        count(distinct player_id) as active_user
     from (
         select *,
-               rank() over (partition by player_id order by event_date asc) as rank,
-               lag(event_date) over (partition by player_id order by event_date asc) as lag_date
-        from activity
-    ) as x 
-    where x.rank <= 2 
-          and event_date = lag_date + interval '1 day'
-),
-cte2 as (
-    select count(distinct player_id) as total_user 
-    from activity
-)
+            rank() over (partition by player_id order by event_date asc) as rank,
+            lag(event_date) over(partition by player_id order by event_date asc) as lag_date
+            from activity) as x where x.rank <=2 and event_date = lag_date + interval '1 day'),
+cte2 as (select
+            count(distinct player_id) as total_user
+            from activity)
+select ROUND(active_user*1.0/total_user,2) as fraction from cte,cte2
 
-select round(active_user * 1.0 / total_user, 2) as fraction 
-from cte, cte2;
+
+SELECT 
+    ROUND(COUNT(*)::numeric / (SELECT COUNT(DISTINCT player_id) FROM activity), 2) AS fraction
+FROM activity a
+WHERE (player_id, event_date) IN (
+        SELECT player_id, MIN(event_date) + INTERVAL '1 day' 
+        FROM activity 
+        GROUP BY player_id
+    )
+
+-- MIN(event_date) is the first log date
+-- MIN(event_date) + INTERVAL '1 day' finds the next day's log
+
+WITH total_players AS (
+    SELECT COUNT(DISTINCT player_id) AS total_user
+    FROM activity
+),
+active_consecutive AS (
+    SELECT COUNT(DISTINCT player_id) AS active_user
+    FROM activity a
+    WHERE (player_id, event_date) IN (
+        SELECT player_id, MIN(event_date) + INTERVAL '1 day'
+        FROM activity
+        GROUP BY player_id
+    )
+)
+SELECT ROUND(active_user::numeric / total_user, 2) AS fraction
+FROM active_consecutive, total_players;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 ```
 
+<hr>
 
-
-
-### Revised
+### Revision Completed
 
 [1757. Recyclable and Low Fat Products](https://leetcode.com/problems/recyclable-and-low-fat-products/)
 
@@ -415,3 +492,13 @@ on s.product_id=p.product_id
 -- If all product_ids in Sales exist in Product, INNER JOIN is more efficient in both time and space.
 -- If some product_ids in Sales may not exist in Product, and we still want those rows, use LEFT JOIN.
 ```
+
+[1378. Replace Employee ID With The Unique Identifier](https://leetcode.com/problems/replace-employee-id-with-the-unique-identifier/)
+
+```sql
+select eu.unique_id, e.name
+from Employees e
+left join EmployeeUNI eu
+on eu.id=e.id 
+```
+Using <code>LEFT JOIN</code> ensures that we get all employees even if they don't have a corresponding entry in the employeeuni table. In no match was found "NULL" will be retured for the unique_id.
