@@ -1035,3 +1035,168 @@ COPY INTO OUR_FIRST_DB.PUBLIC.ORDERS_EX
     ON_ERROR = SKIP_FILE_3 
     SIZE_LIMIT = 30;
 ```
+
+##  File format object
+
+1. **File Format in COPY Command**  
+   - Traditionally, file formats (e.g., CSV) are defined within the `COPY` command.  
+   - This includes properties like field delimiters, header skipping, etc.  
+
+2. **Best Practice: File Format Object**  
+   - Instead of defining the format in every `COPY` command, a reusable **file format object** can be created.  
+   - This improves organization and reusability.  
+
+3. **Creating a File Format Object**  
+   - Use `CREATE OR REPLACE FILE FORMAT` to define file properties.  
+   - Example:  
+     ```sql
+     CREATE OR REPLACE FILE FORMAT my_format
+     TYPE = CSV
+     FIELD_DELIMITER = ','
+     SKIP_HEADER = 1;
+     ```
+   - The object can be stored in a dedicated schema for organization.  
+
+4. **Using File Format Object in COPY Command**  
+   - Instead of specifying file properties manually, refer to the file format object:  
+     ```sql
+     COPY INTO my_table  
+     FROM @my_stage  
+     FILE_FORMAT = (FORMAT_NAME = my_format);
+     ```
+
+5. **Modifying File Format Object**  
+   - Properties can be changed using `ALTER FILE FORMAT`.  
+   - Example:  
+     ```sql
+     ALTER FILE FORMAT my_format SET SKIP_HEADER = 1;
+     ```
+   - **However, the file type (CSV/JSON) cannot be changed**—a new format object must be created.  
+
+6. **Overriding File Format Properties in COPY Command**  
+   - Specific properties can be temporarily overridden in a `COPY` command without altering the format object.  
+   - Example:  
+     ```sql
+     COPY INTO my_table  
+     FROM @my_stage  
+     FILE_FORMAT = (FORMAT_NAME = my_format, SKIP_HEADER = 1);
+     ```
+
+7. **File Format vs. Stage Object**  
+   - File format properties can also be defined in a **stage object**.  
+   - However, best practice is to keep file formats separate for clarity and flexibility.  
+   - If a `FILE_FORMAT` is specified in `COPY`, it overrides the stage file format properties.  
+
+### Conclusion  
+Using a **file format object** instead of defining file formats in every `COPY` command enhances organization and reusability. While file format properties can be set in a stage object, keeping them separate is a recommended best practice.
+
+```sql
+
+-- Specifying file_format in Copy command
+COPY INTO OUR_FIRST_DB.PUBLIC.ORDERS_EX
+    FROM @MANAGE_DB.external_stages.aws_stage_errorex
+    file_format = (type = csv field_delimiter=',' skip_header=1)
+    files = ('OrderDetails_error.csv')
+    ON_ERROR = 'SKIP_FILE_3'; 
+    
+-- Creating table
+CREATE OR REPLACE TABLE OUR_FIRST_DB.PUBLIC.ORDERS_EX (
+    ORDER_ID VARCHAR(30),
+    AMOUNT INT,
+    PROFIT INT,
+    QUANTITY INT,
+    CATEGORY VARCHAR(30),
+    SUBCATEGORY VARCHAR(30));    
+    
+-- Creating schema to keep things organized
+CREATE OR REPLACE SCHEMA MANAGE_DB.file_formats;
+
+-- Creating file format object
+CREATE OR REPLACE file format MANAGE_DB.file_formats.my_file_format;
+
+-- See properties of file format object
+DESC file format MANAGE_DB.file_formats.my_file_format;
+
+-- Using file format object in Copy command       
+COPY INTO OUR_FIRST_DB.PUBLIC.ORDERS_EX
+    FROM @MANAGE_DB.external_stages.aws_stage_errorex
+    file_format= (FORMAT_NAME=MANAGE_DB.file_formats.my_file_format)
+    files = ('OrderDetails_error.csv')
+    ON_ERROR = 'SKIP_FILE_3'; 
+
+-- Altering file format object
+ALTER file format MANAGE_DB.file_formats.my_file_format
+    SET SKIP_HEADER = 1;
+    
+-- Defining properties on creation of file format object   
+CREATE OR REPLACE file format MANAGE_DB.file_formats.my_file_format
+    TYPE=JSON,
+    TIME_FORMAT=AUTO;    
+    
+-- See properties of file format object    
+DESC file format MANAGE_DB.file_formats.my_file_format;   
+  
+-- Using file format object in Copy command       
+COPY INTO OUR_FIRST_DB.PUBLIC.ORDERS_EX
+    FROM @MANAGE_DB.external_stages.aws_stage_errorex
+    file_format= (FORMAT_NAME=MANAGE_DB.file_formats.my_file_format)
+    files = ('OrderDetails_error.csv')
+    ON_ERROR = 'SKIP_FILE_3'; 
+
+-- Altering the type of a file format is not possible
+ALTER file format MANAGE_DB.file_formats.my_file_format
+SET TYPE = CSV;
+
+-- Recreate file format (default = CSV)
+CREATE OR REPLACE file format MANAGE_DB.file_formats.my_file_format;
+
+-- See properties of file format object    
+DESC file format MANAGE_DB.file_formats.my_file_format;   
+
+-- Truncate table
+TRUNCATE table OUR_FIRST_DB.PUBLIC.ORDERS_EX;
+
+-- Overwriting properties of file format object      
+COPY INTO OUR_FIRST_DB.PUBLIC.ORDERS_EX
+    FROM  @MANAGE_DB.external_stages.aws_stage_errorex
+    file_format = (FORMAT_NAME= MANAGE_DB.file_formats.my_file_format  field_delimiter = ',' skip_header=1 )
+    files = ('OrderDetails_error.csv')
+    ON_ERROR = 'SKIP_FILE_3'; 
+
+DESC STAGE MANAGE_DB.external_stages.aws_stage_errorex;
+
+```
+
+## Assignment 4: Create file format object & use copy option
+
+```sql
+USE EXERCISE_DB;
+
+CREATE TABLE IF NOT EXISTS customers (
+    ID INT,
+    first_name VARCHAR,
+    last_name VARCHAR,
+    email VARCHAR,
+    age INT,
+    city VARCHAR
+);
+
+CREATE OR REPLACE FILE FORMAT exercise_db.public.my_file_format
+TYPE = CSV
+FIELD_DELIMITER = '|'
+SKIP_HEADER = 1;
+
+CREATE OR REPLACE STAGE exercise_db.public.my_stage
+URL = 's3://snowflake-assignments-mc/fileformat/'
+FILE_FORMAT = exercise_db.public.my_file_format;
+
+
+LIST @exercise_db.public.my_stage;
+
+COPY INTO exercise_db.public.customers
+FROM @exercise_db.public.my_stage
+FILE_FORMAT = (FORMAT_NAME = exercise_db.public.my_file_format);
+
+SELECT COUNT(*) FROM exercise_db.public.customers;
+
+```
