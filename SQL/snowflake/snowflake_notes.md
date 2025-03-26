@@ -1200,3 +1200,693 @@ FILE_FORMAT = (FORMAT_NAME = exercise_db.public.my_file_format);
 SELECT COUNT(*) FROM exercise_db.public.customers;
 
 ```
+
+## COPY Options in Snowflake 
+
+1. **Purpose of COPY Options**  
+   - COPY options **modify** the behavior of the `COPY INTO` command.  
+   - They help control how data is loaded into tables.  
+
+2. **Syntax of COPY Options**  
+   - COPY options are added as **properties** in the `COPY INTO` command.  
+   - Example:  
+     ```sql
+     COPY INTO table_name
+     FROM @stage_name
+     FILE_FORMAT = (FORMAT_NAME = my_file_format)
+     ON_ERROR = 'CONTINUE';
+     ```
+   - Here, `ON_ERROR = 'CONTINUE'` modifies how errors are handled.  
+
+3. **Examples of COPY Options**  
+   - `ON_ERROR`: Defines how to handle errors (e.g., `'CONTINUE'`, `'SKIP_FILE'`, `'ABORT_STATEMENT'`).  
+   - `PURGE`: If `TRUE`, deletes the source file after a successful load.  
+   - `MATCH_BY_COLUMN_NAME`: Specifies if column names in the file should match table columns.  
+
+4. **Importance of COPY Options**  
+   - They allow **fine-tuning** of data loading behavior.  
+   - Help manage errors, duplicate data, and transformations.  
+
+### VALIDATION_MODE
+
+1. **VALIDATION_MODE in COPY Command**  
+   - Allows validating data before loading.  
+   - Ensures errors are identified before inserting data.
+
+2. **RETURN_ERRORS Option**  
+   - Displays errors found in data without loading it.  
+   - Returns error details such as file, line, character, and type.
+
+3. **RETURN_n_ROWS Option**  
+   - Returns a specified number of rows if no errors are found.  
+   - Example: RETURN_10_ROWS will display the first 10 rows if they are valid.  
+
+4. **Practical Execution**  
+   - A database and an ORDERS table are created.  
+   - Data is stored in an S3 bucket and accessed via a stage object.  
+   - LIST command helps check available files in the stage.  
+   - COPY command is used with VALIDATION_MODE to test data before loading.  
+
+```sql
+
+-- Prepare database & table
+
+CREATE OR REPLACE DATABASE COPY_DB;
+
+CREATE OR REPLACE TABLE  COPY_DB.PUBLIC.ORDERS (
+    ORDER_ID VARCHAR(30),
+    AMOUNT VARCHAR(30),
+    PROFIT INT,
+    QUANTITY INT,
+    CATEGORY VARCHAR(30),
+    SUBCATEGORY VARCHAR(30));
+
+-- Prepare stage object
+
+CREATE OR REPLACE STAGE COPY_DB.PUBLIC.aws_stage_copy
+    url='s3://snowflakebucket-copyoption/size/';
+  
+LIST @COPY_DB.PUBLIC.aws_stage_copy;
+  
+-- Load data using copy command
+
+COPY INTO COPY_DB.PUBLIC.ORDERS
+    FROM @aws_stage_copy
+    file_format= (type = csv field_delimiter=',' skip_header=1)
+    pattern='.*Order.*'
+    VALIDATION_MODE = RETURN_ERRORS;
+    
+SELECT * FROM ORDERS;    
+    
+COPY INTO COPY_DB.PUBLIC.ORDERS
+    FROM @aws_stage_copy
+    file_format= (type = csv field_delimiter=',' skip_header=1)
+    pattern='.*Order.*'
+   VALIDATION_MODE = RETURN_5_ROWS ;
+
+--- Use files with errors ---
+
+create or replace stage copy_db.public.aws_stage_copy
+    url ='s3://snowflakebucket-copyoption/returnfailed/';
+    
+list @copy_db.public.aws_stage_copy;
+
+-- show all errors --
+copy into copy_db.public.orders
+    from @copy_db.public.aws_stage_copy
+    file_format = (type=csv field_delimiter=',' skip_header=1)
+    pattern='.*Order.*'
+    validation_mode=return_errors;
+
+-- validate first n rows --
+copy into copy_db.public.orders
+    from @copy_db.public.aws_stage_copy
+    file_format = (type=csv field_delimiter=',' skip_header=1)
+    pattern='.*error.*'
+    validation_mode=return_1_rows;
+``` 
+
+5. **Handling Errors**  
+   - When errors exist, RETURN_ERRORS displays them.  
+   - Errors can include numeric conversion issues, missing values, etc.  
+   - The source file, row, and character causing the issue are shown.  
+
+6. **Testing with Different Stages**  
+   - A new stage with error-containing files is created and validated.  
+   - Errors are displayed instead of loading faulty data.  
+   - RETURN_n_ROWS will not return rows if an error exists in the first row.  
+
+7. **Importance of Validation**  
+   - Helps prevent bad data from entering tables.  
+   - Ensures only clean, accurate data is loaded.
+
+### Assignment 5: Using the copy options
+
+```sql
+---- Assignment - Create file format & load data ----
+ 
+-- create table
+create or replace table employees(
+  customer_id int,
+  first_name varchar(50),
+  last_name varchar(50),
+  email varchar(50),
+  age int,
+  city varchar(50));
+ 
+-- create file format object
+CREATE OR REPLACE FILE FORMAT EXERCISE_DB.public.aws_fileformat
+TYPE = CSV
+FIELD_DELIMITER=','
+SKIP_HEADER=1;
+
+-- create stage object
+CREATE OR REPLACE STAGE EXERCISE_DB.public.aws_stage
+    url='s3://snowflake-assignments-mc/copyoptions/example1';
+    
+-- List files in stage
+LIST @EXERCISE_DB.public.aws_stage;      
+
+-- Use validation mode
+COPY INTO EXERCISE_DB.PUBLIC.EMPLOYEES
+    FROM @aws_stage
+      file_format= EXERCISE_DB.public.aws_fileformat
+      VALIDATION_MODE = RETURN_ERRORS;
+ 
+-- Use ON_ERROR
+COPY INTO EXERCISE_DB.PUBLIC.EMPLOYEES
+    FROM @aws_stage
+      file_format= EXERCISE_DB.public.aws_fileformat
+      ON_ERROR = CONTINUE;
+```
+## Working with rejected records
+
+1. **Using Validation Mode to Identify Errors**  
+   - `VALIDATION_MODE = RETURN_ERRORS` helps detect errors without loading data.  
+   - The error report includes details like file, row, character, and category.
+
+2. **Fetching Error Results**  
+   - Errors from the last COPY command can be retrieved using `RESULT_SCAN(LAST_QUERY_ID())`.  
+   - The last query ID can be manually copied or dynamically fetched.
+
+3. **Storing Rejected Records**  
+   - Create a `REJECTED` table to store problematic records.  
+   - Use `INSERT INTO rejected` to add new rejected records dynamically.
+
+4. **Alternative Method: Using ON_ERROR = CONTINUE**  
+   - Loads valid rows while skipping erroneous ones.  
+   - Errors can still be retrieved using `VALIDATE` on the last COPY command.
+
+5. **Processing Rejected Records**  
+   - The `REJECTED_ERRORS` column is of type `VARIANT` in Snowflake.  
+   - Use `SPLIT_PART()` to extract individual error details.  
+   - Data can be transformed and stored in a structured format for further processing.
+
+6. **Fixing Errors Before Reloading**  
+   - Replace incorrect values (e.g., negative quantities).  
+   - Clean and reprocess corrected records.  
+
+7. **Final Steps**  
+   - Save processed error data in a `REJECTED_VALUES` table.  
+   - Review and refine rejected records for potential reloading.  
+
+These techniques help efficiently handle and fix errors in Snowflake COPY commands.
+
+
+```sql
+
+---- Use files with errors ----
+CREATE OR REPLACE STAGE COPY_DB.PUBLIC.aws_stage_copy
+    url='s3://snowflakebucket-copyoption/returnfailed/';
+
+LIST @COPY_DB.PUBLIC.aws_stage_copy;    
+
+COPY INTO COPY_DB.PUBLIC.ORDERS
+    FROM @aws_stage_copy
+    file_format= (type = csv field_delimiter=',' skip_header=1)
+    pattern='.*Order.*'
+    VALIDATION_MODE = RETURN_ERRORS;
+
+COPY INTO COPY_DB.PUBLIC.ORDERS
+    FROM @aws_stage_copy
+    file_format= (type = csv field_delimiter=',' skip_header=1)
+    pattern='.*Order.*'
+    VALIDATION_MODE = RETURN_1_rows;
+    
+-------------- Working with error results -----------
+
+---- 1) Saving rejected files after VALIDATION_MODE ---- 
+
+CREATE OR REPLACE TABLE  COPY_DB.PUBLIC.ORDERS (
+    ORDER_ID VARCHAR(30),
+    AMOUNT VARCHAR(30),
+    PROFIT INT,
+    QUANTITY INT,
+    CATEGORY VARCHAR(30),
+    SUBCATEGORY VARCHAR(30));
+
+COPY INTO COPY_DB.PUBLIC.ORDERS
+    FROM @aws_stage_copy
+    file_format= (type = csv field_delimiter=',' skip_header=1)
+    pattern='.*Order.*'
+    VALIDATION_MODE = RETURN_ERRORS;
+
+
+-- Storing rejected /failed results in a table
+
+CREATE OR REPLACE TABLE rejected AS 
+select rejected_record from table(result_scan(last_query_id()));
+
+-- Adding additional records --
+
+INSERT INTO rejected
+select rejected_record from table(result_scan(last_query_id()));
+
+SELECT * FROM rejected;
+
+---- 2) Saving rejected files without VALIDATION_MODE ---- 
+
+COPY INTO COPY_DB.PUBLIC.ORDERS
+    FROM @aws_stage_copy
+    file_format= (type = csv field_delimiter=',' skip_header=1)
+    pattern='.*Order.*'
+    ON_ERROR=CONTINUE;
+  
+select * from table(validate(orders, job_id => '_last'));
+
+---- 3) Working with rejected records ---- 
+
+SELECT REJECTED_RECORD FROM rejected;
+
+CREATE OR REPLACE TABLE rejected_values as
+SELECT 
+SPLIT_PART(rejected_record,',',1) as ORDER_ID, 
+SPLIT_PART(rejected_record,',',2) as AMOUNT, 
+SPLIT_PART(rejected_record,',',3) as PROFIT, 
+SPLIT_PART(rejected_record,',',4) as QUATNTITY, 
+SPLIT_PART(rejected_record,',',5) as CATEGORY, 
+SPLIT_PART(rejected_record,',',6) as SUBCATEGORY
+FROM rejected; 
+
+SELECT * FROM rejected_values;
+
+```
+## SIZE_LIMIT Copy Option
+
+1. **What is SIZE_LIMIT?**  
+   - `SIZE_LIMIT` sets a maximum file size (in bytes) for a COPY command.  
+   - At least one file (the first one) will always be loaded, even if it exceeds the limit.  
+   - If the combined file size exceeds the limit, additional files will not be loaded.  
+
+2. **Using SIZE_LIMIT in Practice**  
+   - First, reset the database and create a new stage object pointing to an S3 bucket.  
+   - Check the file sizes in the stage before applying `SIZE_LIMIT`.
+
+```sql
+
+---- SIZE_LIMIT ----
+
+-- Prepare database & table
+CREATE OR REPLACE DATABASE COPY_DB;
+
+CREATE OR REPLACE TABLE  COPY_DB.PUBLIC.ORDERS (
+    ORDER_ID VARCHAR(30),
+    AMOUNT VARCHAR(30),
+    PROFIT INT,
+    QUANTITY INT,
+    CATEGORY VARCHAR(30),
+    SUBCATEGORY VARCHAR(30));
+    
+-- Prepare stage object
+CREATE OR REPLACE STAGE COPY_DB.PUBLIC.aws_stage_copy
+    url='s3://snowflakebucket-copyoption/size/';
+    
+-- List files in stage
+LIST @aws_stage_copy;
+
+-- Load data using copy command
+COPY INTO COPY_DB.PUBLIC.ORDERS
+    FROM @aws_stage_copy
+    file_format= (type = csv field_delimiter=',' skip_header=1)
+    pattern='.*Order.*'
+    SIZE_LIMIT=20000;
+```
+
+3. **Example Scenarios**  
+   - **Setting `SIZE_LIMIT = 20,000`**  
+     - The first file is loaded (even if it exceeds the limit).  
+     - No additional files are loaded.  
+   - **Setting `SIZE_LIMIT = 60,000`**  
+     - If the first file is within the limit, additional files are loaded until the limit is reached.  
+
+4. **Key Takeaways**  
+   - The limit applies to the total size of loaded files, not individual files.  
+   - Useful for controlling data ingestion size and optimizing performance.
+
+### RETURN_FAILED_ONLY Copy Option  
+
+1. **What is RETURN_FAILED_ONLY?**  
+   - A COPY option that returns only files that failed to load due to errors.  
+   - Default value is `FALSE`, meaning all files (both successful and failed) are shown.  
+
+2. **How It Works**  
+   - When set to `TRUE`, only files with errors are displayed, while fully loaded files are hidden.  
+   - If used alone, it may not be useful because errors still stop execution.  
+   - Best used with `ON_ERROR = CONTINUE` to continue loading despite errors.  
+
+3. **Example Scenarios**  
+   - **Without RETURN_FAILED_ONLY (default or `FALSE`)**  
+     - Shows all files, including successfully loaded ones.  
+   - **With RETURN_FAILED_ONLY = TRUE**  
+     - Displays only files that had partial loading due to errors.  
+
+4. **Use Case**  
+   - Helpful when working with large datasets, allowing focus only on problematic files.  
+
+```sql
+---- RETURN_FAILED_ONLY ----
+
+CREATE OR REPLACE TABLE  COPY_DB.PUBLIC.ORDERS (
+    ORDER_ID VARCHAR(30),
+    AMOUNT VARCHAR(30),
+    PROFIT INT,
+    QUANTITY INT,
+    CATEGORY VARCHAR(30),
+    SUBCATEGORY VARCHAR(30));
+
+-- Prepare stage object
+CREATE OR REPLACE STAGE COPY_DB.PUBLIC.aws_stage_copy
+    url='s3://snowflakebucket-copyoption/returnfailed/';
+  
+LIST @COPY_DB.PUBLIC.aws_stage_copy;
+    
+ -- Load data using copy command
+COPY INTO COPY_DB.PUBLIC.ORDERS
+    FROM @aws_stage_copy
+    file_format= (type = csv field_delimiter=',' skip_header=1)
+    pattern='.*Order.*'
+    RETURN_FAILED_ONLY = TRUE;
+    
+COPY INTO COPY_DB.PUBLIC.ORDERS
+    FROM @aws_stage_copy
+    file_format= (type = csv field_delimiter=',' skip_header=1)
+    pattern='.*Order.*'
+    ON_ERROR =CONTINUE
+    RETURN_FAILED_ONLY = TRUE;
+
+-- Default = FALSE
+
+CREATE OR REPLACE TABLE  COPY_DB.PUBLIC.ORDERS (
+    ORDER_ID VARCHAR(30),
+    AMOUNT VARCHAR(30),
+    PROFIT INT,
+    QUANTITY INT,
+    CATEGORY VARCHAR(30),
+    SUBCATEGORY VARCHAR(30));
+
+COPY INTO COPY_DB.PUBLIC.ORDERS
+    FROM @aws_stage_copy
+    file_format= (type = csv field_delimiter=',' skip_header=1)
+    pattern='.*Order.*'
+    ON_ERROR =CONTINUE;
+```
+
+## TRUNCATECOLUMNS Copy Option 
+
+1. **What is TRUNCATECOLUMNS?**  
+   - A COPY option that determines whether to truncate values exceeding the target column's length.  
+   - **Default:** `FALSE` (causes an error when data exceeds column limits).  
+
+2. **How It Works**  
+   - If **set to `FALSE`**, an error occurs when a value exceeds the column’s character limit.  
+   - If **set to `TRUE`**, the exceeding characters are automatically truncated to fit within the column's limit.  
+
+3. **Example Scenario**  
+   - A table has a **VARCHAR(10)** column.  
+   - A source file contains a value, **"Electronics" (11 characters)**.  
+   - With `TRUNCATECOLUMNS = TRUE`, the value is truncated to **"Electronic" (10 characters)**, preventing an error.  
+
+4. **Use Case**  
+   - Useful when data cannot be modified at the source.  
+   - Helps prevent errors without changing column definitions.
+
+```sql
+CREATE OR REPLACE TABLE  COPY_DB.PUBLIC.ORDERS (
+    ORDER_ID VARCHAR(30),
+    AMOUNT VARCHAR(30),
+    PROFIT INT,
+    QUANTITY INT,
+    CATEGORY VARCHAR(10),
+    SUBCATEGORY VARCHAR(30));
+
+-- Prepare stage object
+CREATE OR REPLACE STAGE COPY_DB.PUBLIC.aws_stage_copy
+    url='s3://snowflakebucket-copyoption/size/';
+  
+LIST @COPY_DB.PUBLIC.aws_stage_copy;
+    
+-- Load data using copy command
+COPY INTO COPY_DB.PUBLIC.ORDERS
+    FROM @aws_stage_copy
+    file_format= (type = csv field_delimiter=',' skip_header=1)
+    pattern='.*Order.*';
+
+
+COPY INTO COPY_DB.PUBLIC.ORDERS
+    FROM @aws_stage_copy
+    file_format= (type = csv field_delimiter=',' skip_header=1)
+    pattern='.*Order.*'
+    TRUNCATECOLUMNS = true;  
+    
+SELECT * FROM ORDERS;
+```
+
+## FORCE Copy Option
+
+1. **What is FORCE?**  
+   - A COPY option that allows **reloading files** even if they have **already been loaded** and **haven't changed**.  
+   - **Default:** `FALSE` (prevents duplicate loading).  
+
+2. **How It Works**  
+   - **Default Behavior (`FALSE`)**:  
+     - Snowflake tracks previously loaded files and skips them if they haven't changed.  
+   - **With `FORCE = TRUE`**:  
+     - The file is loaded again **regardless** of whether it was previously processed, which **can lead to duplicates**.  
+
+3. **Example Scenario**  
+   - Load a file into a table → Works as expected.  
+   - Try to load the same file again → Snowflake **skips it** (since it remembers it was loaded).  
+   - Use `FORCE = TRUE` → Snowflake **reloads the file**, even if unchanged.  
+
+4. **Use Case & Considerations**  
+   - **When Needed:** If forced reloading is necessary for **testing, debugging, or special cases**.  
+   - **Risk:** Can **cause duplicate records**, so use with caution.
+
+```sql
+
+CREATE OR REPLACE TABLE  COPY_DB.PUBLIC.ORDERS (
+    ORDER_ID VARCHAR(30),
+    AMOUNT VARCHAR(30),
+    PROFIT INT,
+    QUANTITY INT,
+    CATEGORY VARCHAR(30),
+    SUBCATEGORY VARCHAR(30));
+
+-- Prepare stage object
+CREATE OR REPLACE STAGE COPY_DB.PUBLIC.aws_stage_copy
+    url='s3://snowflakebucket-copyoption/size/';
+  
+LIST @COPY_DB.PUBLIC.aws_stage_copy;
+  
+-- Load data using copy command
+COPY INTO COPY_DB.PUBLIC.ORDERS
+    FROM @aws_stage_copy
+    file_format= (type = csv field_delimiter=',' skip_header=1)
+    pattern='.*Order.*';
+
+-- Not possible to load file that have been loaded and data has not been modified
+COPY INTO COPY_DB.PUBLIC.ORDERS
+    FROM @aws_stage_copy
+    file_format= (type = csv field_delimiter=',' skip_header=1)
+    pattern='.*Order.*';
+
+SELECT * FROM ORDERS;    
+
+-- Using the FORCE option
+
+COPY INTO COPY_DB.PUBLIC.ORDERS
+    FROM @aws_stage_copy
+    file_format= (type = csv field_delimiter=',' skip_header=1)
+    pattern='.*Order.*'
+    FORCE = TRUE;
+```
+
+### Analyzing Load History in Snowflake 
+
+1. **Why Check Load History?**  
+   - Helps track **which files** were loaded into tables.  
+   - Shows **last load time**, **row count**, **errors**, etc.  
+   - Useful for debugging and data validation.  
+
+2. **Viewing Load History in Snowflake**  
+   - Each **database** has an `INFORMATION_SCHEMA`.  
+   - Inside it, the **LOAD_HISTORY** view stores **table-specific** load history.  
+   - Example query:  
+     ```sql
+     SELECT * FROM INFORMATION_SCHEMA.LOAD_HISTORY;
+     ```
+   - Shows details like **schema name, table name, load time, rows loaded, and errors**.  
+
+3. **Global Load History**  
+   - Found in **SNOWFLAKE database → ACCOUNT_USAGE schema**.  
+   - Provides **historical load data**, even for replaced tables.  
+   - Contains a **hidden table ID** (unique for each table instance).  
+   - Query:  
+     ```sql
+     SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.LOAD_HISTORY;
+     ```
+  
+4. **Filtering Load History**  
+   - **By Table Name & Schema**:  
+     ```sql
+     SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.LOAD_HISTORY  
+     WHERE TABLE_NAME = 'ORDERS' AND SCHEMA_NAME = 'PUBLIC';
+     ```
+   - **Only Failed Loads**:  
+     ```sql
+     SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.LOAD_HISTORY  
+     WHERE ERROR_COUNT > 0;
+     ```
+   - **By Date (e.g., before yesterday)**:  
+     ```sql
+     SELECT * FROM SNOWFLAKE.ACCOUNT_USAGE.LOAD_HISTORY  
+     WHERE LAST_LOAD_TIME < CURRENT_DATE - 1;
+     ```
+
+5. **Why Use This?**  
+   - **Audit and troubleshoot data loads.**  
+   - **Identify and fix errors quickly.**  
+   - **Track changes over time, even if tables were replaced.**
+
+  ## Assignment 6: Using the copy options
+
+```sql
+ -- Create table
+create or replace table employees(
+  customer_id int,
+  first_name varchar(50),
+  last_name varchar(50),
+  email varchar(50),
+  age int,
+  department varchar(50));
+
+
+-- create stage object
+CREATE OR REPLACE STAGE EXERCISE_DB.public.aws_stage
+    url='s3://snowflake-assignments-mc/copyoptions/example2';
+ 
+-- create file format object
+CREATE OR REPLACE FILE FORMAT EXERCISE_DB.public.aws_fileformat
+TYPE = CSV
+FIELD_DELIMITER=','
+SKIP_HEADER=1;
+
+ 
+-- Use validation mode
+COPY INTO EXERCISE_DB.PUBLIC.EMPLOYEES
+    FROM @aws_stage
+      file_format= EXERCISE_DB.public.aws_fileformat
+      VALIDATION_MODE = RETURN_ERRORS;
+
+-- Use TRUNCATECOLUMNS
+
+COPY INTO EXERCISE_DB.PUBLIC.EMPLOYEES
+    FROM @aws_stage
+      file_format= EXERCISE_DB.public.aws_fileformat
+      TRUNCATECOLUMNS = TRUE; 
+```
+
+## Loading Unstructured Data
+
+### Handling Semi-Structured Data in Snowflake
+
+#### **Why Work with Semi-Structured Data?**  
+- **JSON, XML, or Parquet files** don’t follow strict table structures.  
+- Snowflake provides powerful tools to **store, parse, and analyze** such data.  
+
+### **Steps to Load and Process Semi-Structured Data**  
+
+**1️. Create a Stage**  
+- A **stage** establishes a connection to where the files are stored (e.g., S3, Azure Blob, GCS).  
+- Example of creating an external stage:  
+  ```sql
+  CREATE OR REPLACE STAGE my_stage  
+  URL = 's3://my-bucket/data/'  
+  STORAGE_INTEGRATION = my_integration;
+  ```
+---
+
+**2.. Load Raw Data into a Table**  
+- Create a **table with a VARIANT column** (which can store flexible JSON data).  
+- Load data from the staged files.  
+- Example:  
+  ```sql
+  CREATE OR REPLACE TABLE raw_json_data (data VARIANT);
+  
+  COPY INTO raw_json_data  
+  FROM @my_stage/json_files  
+  FILE_FORMAT = (TYPE = JSON);
+  ```
+---
+
+**3️. Analyze & Extract Data**  
+- Use **Snowflake JSON functions** to query nested fields.  
+- Example (extracting `customer_name` from JSON data):  
+  ```sql
+  SELECT data:customer.name AS customer_name  
+  FROM raw_json_data;
+  ```
+  
+---
+
+**4️. Flatten & Transform the Data**  
+- **FLATTEN()** helps convert **nested JSON arrays** into rows.  
+- Example:  
+  ```sql
+  SELECT value:order_id AS order_id, value:product AS product_name  
+  FROM raw_json_data,  
+  LATERAL FLATTEN(input => data:orders);
+  ```
+  
+---
+
+**5️. Load into a Final Structured Table**  
+- After extracting necessary fields, load into a **structured table**.  
+- Example:  
+  ```sql
+  CREATE OR REPLACE TABLE final_orders (  
+      order_id INT,  
+      customer_name STRING,  
+      product STRING  
+  );
+
+  INSERT INTO final_orders  
+  SELECT data:order_id, data:customer.name, data:product  
+  FROM raw_json_data;
+  ```
+### **Summary**  
+**Stages** store files for processing.  
+**VARIANT data type** allows flexibility.  
+**JSON functions** extract necessary fields.  
+**FLATTEN()** helps with hierarchical data.  
+**Final table** ensures structured storage.  
+
+
+## **Working with JSON Data in Snowflake**  
+
+**JSON Overview**  
+- JSON (JavaScript Object Notation) is a structured text format for storing and transmitting **semi-structured** data.  
+- It consists of **objects (key-value pairs)**, **arrays**, and **nested structures**.  
+- JSON is commonly used for **APIs, logs, and unstructured datasets**.  
+
+**Challenges in Loading JSON into Snowflake**  
+- **Nested Objects**: JSON attributes can contain objects within objects.  
+- **Arrays**: Some attributes store multiple values in a list format.  
+- **Combination of Nested Objects & Arrays**: Complex hierarchical structures must be flattened for proper querying.  
+
+**Steps to Load JSON Data in Snowflake**  
+**Step 1: Create a Stage** → Connects Snowflake to a storage location (e.g., AWS S3, Azure Blob).  
+**Step 2: Create a Table with a VARIANT Column** → The `VARIANT` data type stores JSON without predefined structure.  
+**Step 3: Load JSON Data Using COPY INTO** → Imports raw JSON data into the table.  
+**Step 4: Query & Extract Data** → Use **dot notation (`data:field`)** for direct access, and **FLATTEN()** for arrays.  
+
+**Extracting Data from JSON**  
+- **Simple Fields**: `SELECT data:name, data:age FROM raw_json_data;`  
+- **Nested Fields**: `SELECT data:job.title FROM raw_json_data;`  
+- **Flattening Arrays**: `LATERAL FLATTEN(input => data:previous_companies);`  
+
+**Key Takeaways**  
+- Snowflake’s **VARIANT** type allows **flexible handling** of semi-structured data.  
+- The **FLATTEN() function** helps extract values from arrays.  
+- JSON parsing functions enable structured querying of **complex, nested data**.  
+- Properly structuring and **transforming JSON data** ensures efficient analysis in Snowflake.
