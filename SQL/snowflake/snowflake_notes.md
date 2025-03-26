@@ -695,6 +695,94 @@ COPY INTO OUR_FIRST_DB.PUBLIC.ORDERS
     FROM @aws_stage
     file_format= (type = csv field_delimiter=',' skip_header=1)
     pattern='.*Order.*';
+
+
+
+-- COPY Command
+
+-- Creating ORDERS table
+
+CREATE OR REPLACE TABLE OUR_FIRST_DB.PUBLIC.ORDERS (
+    ORDER_ID VARCHAR(30),
+    AMOUNT INT,
+    PROFIT INT,
+    QUANTITY INT,
+    CATEGORY VARCHAR(30),
+    SUBCATEGORY VARCHAR(30));
+    
+SELECT * FROM OUR_FIRST_DB.PUBLIC.ORDERS;
+   
+-- First copy command
+COPY INTO OUR_FIRST_DB.PUBLIC.ORDERS
+    FROM @aws_stage
+    file_format = (type = csv field_delimiter=',' skip_header=1);
+
+-- Copy command with fully qualified stage object
+COPY INTO OUR_FIRST_DB.PUBLIC.ORDERS
+    FROM @MANAGE_DB.external_stages.aws_stage
+    file_format= (type = csv field_delimiter=',' skip_header=1);
+
+-- List files contained in stage
+LIST @MANAGE_DB.external_stages.aws_stage;    
+
+-- Copy command with specified file(s)
+
+COPY INTO OUR_FIRST_DB.PUBLIC.ORDERS
+    FROM @MANAGE_DB.external_stages.aws_stage
+    file_format= (type = csv field_delimiter=',' skip_header=1)
+    files = ('OrderDetails.csv');
+  
+
+-- Copy command with pattern for file names
+COPY INTO OUR_FIRST_DB.PUBLIC.ORDERS
+    FROM @MANAGE_DB.external_stages.aws_stage
+    file_format= (type = csv field_delimiter=',' skip_header=1)
+    pattern='.*Order.*';
+    
+
+---- Assignment solution - Create stage & load data ----
+ 
+-- create stage object
+CREATE OR REPLACE STAGE EXERCISE_DB.public.aws_stage
+    url='s3://snowflake-assignments-mc/loadingdata';
+
+-- List files in stage
+LIST @EXERCISE_DB.public.aws_stage;
+
+-- Load the data 
+COPY INTO EXERCISE_DB.PUBLIC.CUSTOMERS
+    FROM @aws_stage
+    file_format= (type = csv field_delimiter=';' skip_header=1)
+
+-- Assignment 3: Create a stage & load data
+
+CREATE OR REPLACE DATABASE EXERCISE_DB;
+USE EXERCISE_DB;
+CREATE OR REPLACE TABLE customers (
+    ID INT PRIMARY KEY,
+    first_name VARCHAR,
+    last_name VARCHAR,
+    email VARCHAR,
+    age INT,
+    city VARCHAR
+);
+
+CREATE OR REPLACE STAGE aws_stage
+URL='s3://snowflake-assignments-mc/loadingdata/'
+FILE_FORMAT = (TYPE = 'CSV' FIELD_DELIMITER = ';' SKIP_HEADER = 1);
+
+LIST @aws_stage;
+
+COPY INTO customers
+FROM @aws_stage
+FILE_FORMAT = (TYPE = 'CSV' FIELD_DELIMITER = ';' SKIP_HEADER = 1);
+
+COPY INTO EXERCISE_DB.PUBLIC.CUSTOMERS
+FROM @aws_stage
+FILE_FORMAT = (TYPE = CSV FIELD_DELIMITER = ';' SKIP_HEADER = 1)
+FILES = ('customers2.csv')
+ON_ERROR = CONTINUE;
 ```
+
 
 
