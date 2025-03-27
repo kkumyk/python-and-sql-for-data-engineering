@@ -1861,32 +1861,1038 @@ COPY INTO EXERCISE_DB.PUBLIC.EMPLOYEES
 **FLATTEN()** helps with hierarchical data.  
 **Final table** ensures structured storage.  
 
+## Working with JSON Data in Snowflake
 
-## **Working with JSON Data in Snowflake**  
+1. **JSON Overview**  
+   - JSON (JavaScript Object Notation) is a structured text format for storing and transmitting semi-structured data.  
+   - It consists of objects (key-value pairs), arrays, and nested structures.  
+   - JSON is commonly used for APIs, logs, and unstructured datasets.  
 
-**JSON Overview**  
-- JSON (JavaScript Object Notation) is a structured text format for storing and transmitting **semi-structured** data.  
-- It consists of **objects (key-value pairs)**, **arrays**, and **nested structures**.  
-- JSON is commonly used for **APIs, logs, and unstructured datasets**.  
+2. **Challenges in Loading JSON into Snowflake**  
+   - Nested Objects: JSON attributes can contain objects within objects.  
+   - Arrays: Some attributes store multiple values in a list format.  
+   - Combination of Nested Objects & Arrays: Complex hierarchical structures must be flattened for proper querying.  
 
-**Challenges in Loading JSON into Snowflake**  
-- **Nested Objects**: JSON attributes can contain objects within objects.  
-- **Arrays**: Some attributes store multiple values in a list format.  
-- **Combination of Nested Objects & Arrays**: Complex hierarchical structures must be flattened for proper querying.  
+3. **Steps to Load JSON Data in Snowflake**  
+   - Step 1: Create a Stage → Connects Snowflake to a storage location (e.g., AWS S3, Azure Blob).  
+   - Step 2: Create a Table with a VARIANT Column → The `VARIANT` data type stores JSON without predefined structure.  
+   - Step 3: Load JSON Data Using COPY INTO → Imports raw JSON data into the table.  
+   - Step 4: Query & Extract Data → Use dot notation (`data:field`) for direct access, and FLATTEN() for arrays.  
 
-**Steps to Load JSON Data in Snowflake**  
-**Step 1: Create a Stage** → Connects Snowflake to a storage location (e.g., AWS S3, Azure Blob).  
-**Step 2: Create a Table with a VARIANT Column** → The `VARIANT` data type stores JSON without predefined structure.  
-**Step 3: Load JSON Data Using COPY INTO** → Imports raw JSON data into the table.  
-**Step 4: Query & Extract Data** → Use **dot notation (`data:field`)** for direct access, and **FLATTEN()** for arrays.  
+4. **Extracting Data from JSON**  
+   - Simple Fields: `SELECT data:name, data:age FROM raw_json_data;`  
+   - Nested Fields: `SELECT data:job.title FROM raw_json_data;`  
+   - Flattening Arrays: `LATERAL FLATTEN(input => data:previous_companies);`  
 
-**Extracting Data from JSON**  
-- **Simple Fields**: `SELECT data:name, data:age FROM raw_json_data;`  
-- **Nested Fields**: `SELECT data:job.title FROM raw_json_data;`  
-- **Flattening Arrays**: `LATERAL FLATTEN(input => data:previous_companies);`  
+5. **Key Takeaways**  
+   - Snowflake’s `VARIANT` type allows flexible handling of semi-structured data.  
+   - The `FLATTEN()` function helps extract values from arrays.  
+   - JSON parsing functions enable structured querying of complex, nested data.  
+   - Properly structuring and transforming JSON data ensures efficient analysis in Snowflake.  
 
-**Key Takeaways**  
-- Snowflake’s **VARIANT** type allows **flexible handling** of semi-structured data.  
-- The **FLATTEN() function** helps extract values from arrays.  
-- JSON parsing functions enable structured querying of **complex, nested data**.  
-- Properly structuring and **transforming JSON data** ensures efficient analysis in Snowflake.
+###  Understanding our data
+- JSON files are text files formatted for human and machine readability.  
+- They are often created automatically by devices and contain structured data.  
+- JSON documents consist of objects enclosed in curly brackets `{}`.  
+- Each object can have multiple attributes, separated by commas.  
+- Objects can have simple attributes like `name: "John"` and `age: 30`.  
+- JSON documents can contain multiple objects separated by commas.  
+- Simple JSON structures can be easily converted into structured tables.  
+- JSON can have **nested values** (objects within objects).  
+- JSON can also include **arrays** (lists of multiple values within brackets `[]`).  
+- Arrays store multiple values for a single attribute, e.g., `previous_companies: ["Google", "Amazon"]`.  
+- Objects can contain nested structures, such as a `job` attribute with `title` and `salary`.  
+- JSON structures can be a **combination of arrays and nested objects**, making them complex.  
+- Example: `spoken_languages` can be an array where each language has a `name` and `level`.  
+- Snowflake supports loading JSON data into a **variant column** for flexibility.  
+- The first step in handling JSON in Snowflake is **creating a stage** to load raw data.  
+- The next step is storing JSON data in a table with a **variant column**.  
+- Further processing involves extracting and flattening JSON data for structured queries.  
+- The upcoming steps will involve handling and querying nested and array-based JSON data.
+
+### Creating stage & raw file
+
+**Step 1:** Establish the connection to the data source (bucket).  
+  - Create a **stage object** (`JSONSTAGE`) specifying the **URL** of the data source. 
+
+**Step 2:** Create a **file format object** (`JSONFORMAT`) with the type set to JSON.  
+  - Use default properties for the file format configuration.  
+
+**Step 3:** Create a **raw table** (`JSON_RAW`) with a **variant** data type to store JSON data.  
+- Each JSON object in the file will be stored as a row in this table. 
+
+**Step 4:** Use the **COPY INTO** command to load the JSON file (`HR_data`) from the stage into the raw table.  
+- Use the previously created file format object to parse the JSON correctly.
+
+**Step 5:** Verify the loaded data by selecting records from the table.  
+- Data appears structured, and Snowflake correctly interprets the JSON format.  
+
+```sql
+-- First step: Load Raw JSON
+
+CREATE OR REPLACE stage MANAGE_DB.EXTERNAL_STAGES.JSONSTAGE
+     url='s3://bucketsnowflake-jsondemo';
+
+CREATE OR REPLACE file format MANAGE_DB.FILE_FORMATS.JSONFORMAT
+    TYPE = JSON;
+    
+CREATE OR REPLACE table OUR_FIRST_DB.PUBLIC.JSON_RAW (
+    raw_file variant);
+    
+COPY INTO OUR_FIRST_DB.PUBLIC.JSON_RAW
+    FROM @MANAGE_DB.EXTERNAL_STAGES.JSONSTAGE
+    file_format= MANAGE_DB.FILE_FORMATS.JSONFORMAT
+    files = ('HR_data.json');
+   
+SELECT * FROM OUR_FIRST_DB.PUBLIC.JSON_RAW;
+
+```
+### Assignment 7: Load raw JSON
+
+```sql
+ --  Create database (only if not already created in previous assignment)
+create database EXERCISE_DB;
+ 
+USE EXERCISE_DB;
+
+-- First step: Load Raw JSON
+CREATE OR REPLACE stage JSONSTAGE
+     url='s3://snowflake-assignments-mc/unstructureddata/';
+
+CREATE OR REPLACE file format JSONFORMAT
+    TYPE = JSON;
+    
+CREATE OR REPLACE table JSON_RAW (
+    raw_file variant);
+    
+COPY INTO JSON_RAW
+    FROM @JSONSTAGE
+    file_format= JSONFORMAT
+    
+SELECT * FROM JSON_RAW;
+
+```
+### Parsing JSON
+
+**Step 1:** Convert raw JSON data into a structured format for SQL queries.  
+**Step 2:** Use **dot notation (`column:attribute`)** to extract specific attributes (e.g., `RAW_FILE:CITY`).  
+**Step 3:** Use **index notation (`$1`)** as an alternative way to reference columns.  
+**Step 4:** Format extracted values for better readability (remove quotes, rename columns using aliases).  
+**Step 5:** Convert data types using **double colons (`::`)** (e.g., `::STRING`, `::INTEGER`).  
+**Step 6:** Ensure numerical values are correctly stored as integers for structured tables.  
+**Step 7:** Combine multiple attributes (ID, first name, last name, gender) into a well-structured table.  
+**Step 8:** Handle **nested JSON data** (e.g., extracting `salary` from a nested `job` object).  
+**Step 9:** Identify challenges with **nested objects and arrays** and prepare to flatten them.  
+**Next Steps:** Learn how to efficiently extract and work with nested JSON data.  
+
+```sql
+-- Second step: Parse & Analyse Raw JSON
+
+   -- Selecting attribute/column
+
+SELECT RAW_FILE:city FROM OUR_FIRST_DB.PUBLIC.JSON_RAW;
+
+SELECT $1:first_name FROM OUR_FIRST_DB.PUBLIC.JSON_RAW;
+
+   -- Selecting attribute/column - formattted
+
+SELECT RAW_FILE:first_name::string as first_name  FROM OUR_FIRST_DB.PUBLIC.JSON_RAW;
+
+SELECT RAW_FILE:id::int as id  FROM OUR_FIRST_DB.PUBLIC.JSON_RAW;
+
+SELECT 
+    RAW_FILE:id::int as id,  
+    RAW_FILE:first_name::STRING as first_name,
+    RAW_FILE:last_name::STRING as last_name,
+    RAW_FILE:gender::STRING as gender
+
+FROM OUR_FIRST_DB.PUBLIC.JSON_RAW;
+
+-- Handling nested data
+   
+SELECT RAW_FILE:job as job  FROM OUR_FIRST_DB.PUBLIC.JSON_RAW;
+
+```
+## Handling Nested Data
+
+- **Use dot notation (`.`) to access nested attributes** within a JSON hierarchy.  
+- **Parent attributes** (e.g., `job`) can be accessed using **colon notation (`:`)**.  
+- **Child attributes** can be accessed by adding a dot (`.`) after the parent attribute (e.g., `job.salary`).  
+- **Type casting (`::`)** can be applied to child attributes to convert them into structured data types.  
+- **Combine multiple extracted attributes** (e.g., `first_name`, `job.salary`, `job.title`) to create a structured table.  
+- **Challenges arise with arrays**, which require additional techniques to flatten multiple values.  
+- **Next step:** Learn how to handle and extract data from JSON arrays in Snowflake.  
+
+
+```sql
+   -- Handling nested data
+   
+SELECT RAW_FILE:job as job  FROM OUR_FIRST_DB.PUBLIC.JSON_RAW;
+
+SELECT 
+      RAW_FILE:job.salary::INT as salary
+FROM OUR_FIRST_DB.PUBLIC.JSON_RAW;
+
+
+SELECT 
+    RAW_FILE:first_name::STRING as first_name,
+    RAW_FILE:job.salary::INT as salary,
+    RAW_FILE:job.title::STRING as title
+FROM OUR_FIRST_DB.PUBLIC.JSON_RAW;
+
+-- Handling arrays
+
+SELECT
+    RAW_FILE:prev_company as prev_company
+FROM OUR_FIRST_DB.PUBLIC.JSON_RAW;
+
+SELECT
+    RAW_FILE:prev_company[1]::STRING as prev_company
+FROM OUR_FIRST_DB.PUBLIC.JSON_RAW;
+
+
+SELECT
+    ARRAY_SIZE(RAW_FILE:prev_company) as prev_company
+FROM OUR_FIRST_DB.PUBLIC.JSON_RAW;
+
+SELECT 
+    RAW_FILE:id::int as id,  
+    RAW_FILE:first_name::STRING as first_name,
+    RAW_FILE:prev_company[0]::STRING as prev_company
+FROM OUR_FIRST_DB.PUBLIC.JSON_RAW
+UNION ALL 
+SELECT 
+    RAW_FILE:id::int as id,  
+    RAW_FILE:first_name::STRING as first_name,
+    RAW_FILE:prev_company[1]::STRING as prev_company
+FROM OUR_FIRST_DB.PUBLIC.JSON_RAW
+ORDER BY id;
+```
+
+### Assignment 8: Parsing & handling array
+
+```sql
+-- Second step: Parse & Analyse Raw JSON 
+
+SELECT * FROM JSON_RAW;
+
+-- Selecting attribute/column
+SELECT 
+$1:first_name::STRING,
+$1:last_name::STRING,
+$1:Skills[0]::STRING,
+$1:Skills[1]::STRING
+FROM JSON_RAW;
+
+
+-- Copy data in table
+CREATE TABLE SKILLS AS
+SELECT 
+$1:first_name::STRING as first_name,
+$1:last_name::STRING as last_name,
+$1:Skills[0]::STRING as Skill_1,
+$1:Skills[1]::STRING as Skill_2
+FROM JSON_RAW;
+
+-- Query from table
+SELECT * FROM SKILLS
+WHERE FIRST_NAME='Florina';
+```
+
+## Flatten Hierarchical Data
+
+- **JSON arrays contain hierarchical data**, making it harder to analyze directly in relational databases.  
+- **Access elements using brackets (`[index]`)** to retrieve specific items, but this approach is limited.  
+- **Use dot notation (`.`)** to extract nested attributes (e.g., `spoken_languages[0].language`).  
+- **Fixed indexing and UNION operations** can break data into rows, but this method is inefficient and rigid.  
+- **Issues with UNION approach**:  
+  - Generates redundant rows with NULL values.  
+  - Doesn't adapt dynamically if more elements exist.  
+- **Best practice: Use the `FLATTEN` function** to dynamically extract and transform array elements into structured rows.  
+- **FLATTEN function in Snowflake**:  
+  - Converts array elements into separate rows dynamically.  
+  - Eliminates NULL values and redundant data.  
+  - Uses a `TABLE FUNCTION` approach for structured querying.  
+- **Querying with `FLATTEN`**:  
+  - Apply `FLATTEN` to the JSON array.  
+  - Use `VALUE` to extract the nested attributes.  
+  - Join the flattened data with the original table for a structured format.  
+- **End result**: A clean, structured table optimized for analytical queries.  
+
+```sql
+
+SELECT 
+    RAW_FILE:spoken_languages as spoken_languages
+FROM OUR_FIRST_DB.PUBLIC.JSON_RAW;
+
+SELECT * FROM OUR_FIRST_DB.PUBLIC.JSON_RAW;
+
+
+SELECT 
+     array_size(RAW_FILE:spoken_languages) as spoken_languages
+FROM OUR_FIRST_DB.PUBLIC.JSON_RAW;
+
+
+SELECT 
+     RAW_FILE:first_name::STRING as first_name,
+     array_size(RAW_FILE:spoken_languages) as spoken_languages
+FROM OUR_FIRST_DB.PUBLIC.JSON_RAW;
+
+
+SELECT 
+    RAW_FILE:spoken_languages[0] as First_language
+FROM OUR_FIRST_DB.PUBLIC.JSON_RAW;
+
+
+SELECT 
+    RAW_FILE:first_name::STRING as first_name,
+    RAW_FILE:spoken_languages[0] as First_language
+FROM OUR_FIRST_DB.PUBLIC.JSON_RAW;
+
+
+SELECT 
+    RAW_FILE:first_name::STRING as First_name,
+    RAW_FILE:spoken_languages[0].language::STRING as First_language,
+    RAW_FILE:spoken_languages[0].level::STRING as Level_spoken
+FROM OUR_FIRST_DB.PUBLIC.JSON_RAW;
+
+SELECT 
+    RAW_FILE:id::int as id,
+    RAW_FILE:first_name::STRING as First_name,
+    RAW_FILE:spoken_languages[0].language::STRING as First_language,
+    RAW_FILE:spoken_languages[0].level::STRING as Level_spoken
+FROM OUR_FIRST_DB.PUBLIC.JSON_RAW
+UNION ALL 
+SELECT 
+    RAW_FILE:id::int as id,
+    RAW_FILE:first_name::STRING as First_name,
+    RAW_FILE:spoken_languages[1].language::STRING as First_language,
+    RAW_FILE:spoken_languages[1].level::STRING as Level_spoken
+FROM OUR_FIRST_DB.PUBLIC.JSON_RAW
+UNION ALL 
+SELECT 
+    RAW_FILE:id::int as id,
+    RAW_FILE:first_name::STRING as First_name,
+    RAW_FILE:spoken_languages[2].language::STRING as First_language,
+    RAW_FILE:spoken_languages[2].level::STRING as Level_spoken
+FROM OUR_FIRST_DB.PUBLIC.JSON_RAW
+ORDER BY ID;
+
+select
+      RAW_FILE:first_name::STRING as First_name,
+    f.value:language::STRING as First_language,
+   f.value:level::STRING as Level_spoken
+from OUR_FIRST_DB.PUBLIC.JSON_RAW, table(flatten(RAW_FILE:spoken_languages)) f;
+
+```
+
+## Insert final data
+
+- **Variant column in Snowflake is highly flexible** and works well with functions like `FLATTEN`.  
+- **Two main ways to insert data into a structured table** from JSON:  
+  1. **Create Table As (`CREATE TABLE AS`)**:  
+     - Directly creates a table from a `SELECT` statement.  
+     - Stores the query result in a new table.  
+     - Example:  
+       ```sql
+       CREATE OR REPLACE TABLE new_table AS
+       SELECT * FROM source_table;
+       ```
+  2. **Separate `INSERT INTO` statement**:  
+     - First, create an empty table with the desired structure.  
+     - Then, use `INSERT INTO` to populate it from a `SELECT` query.  
+     - Example:  
+       ```sql
+       INSERT INTO new_table
+       SELECT * FROM source_table;
+       ```
+- **Truncating the table (`TRUNCATE TABLE`)** removes all records while keeping the structure.  
+- **Query results remain available dynamically** without inserting into a permanent table.  
+- **Choosing between the methods** depends on the use case:  
+  - If querying is frequent and structured storage is needed → **Use `INSERT INTO` or `CREATE TABLE AS`**.  
+  - If queries are dynamic and change often → **Use `FLATTEN` and query JSON data on the fly**.  
+- **Snowflake’s flexibility allows on-the-fly querying**, reducing the need for permanent table creation in some cases.
+
+```sql
+-- Option 1: CREATE TABLE AS
+
+CREATE OR REPLACE TABLE Languages AS
+select
+      RAW_FILE:first_name::STRING as First_name,
+    f.value:language::STRING as First_language,
+   f.value:level::STRING as Level_spoken
+from OUR_FIRST_DB.PUBLIC.JSON_RAW, table(flatten(RAW_FILE:spoken_languages)) f;
+
+SELECT * FROM Languages;
+
+truncate table languages;
+
+-- Option 2: INSERT INTO
+
+INSERT INTO Languages
+select
+      RAW_FILE:first_name::STRING as First_name,
+    f.value:language::STRING as First_language,
+   f.value:level::STRING as Level_spoken
+from OUR_FIRST_DB.PUBLIC.JSON_RAW, table(flatten(RAW_FILE:spoken_languages)) f;
+
+
+SELECT * FROM Languages;
+
+```
+
+## Querying PARQUET Data  
+
+- **Querying Directly from a Stage**  
+  - Data from Parquet files can be queried directly.  
+  - Column names are represented as `$1`, `$2`, etc.  
+  - Attributes inside a column can be accessed using `:` (similar to JSON).  
+
+- **Extracting and Structuring Data**  
+  - Convert raw, nested data into structured columns.  
+  - Use double quotes for attributes containing spaces.  
+  - Extracting attributes makes data more usable for analysis.  
+
+- **Handling Data Type Issues**  
+  - **String values with extra double quotes** → Convert to `VARCHAR`.  
+  - **Integer-stored dates** → Convert to actual `DATE` format.  
+
+- **Converting Numeric Date Values**  
+  - Parquet files often store dates as seconds since **January 1, 1970** (UNIX epoch).  
+  - Use the `DATE` function to transform it:  
+    ```sql
+    SELECT DATE(Seconds_Since_1970) AS Date_Column FROM table;
+    ```
+  - Example conversions:  
+    - `DATE(1)` → **January 1, 1970**  
+    - `DATE(1 * 365)` → **January 1, 1971**  
+
+- **Final Data Transformation**  
+  - Convert string-based numbers to `INTEGER`.  
+  - Apply `VARCHAR`, `DATE`, or other appropriate types for analysis.  
+  - Assign aliases to columns for better readability.  
+
+- **Final Clean Table**  
+  - Now, the table has structured **columns and rows** with correctly formatted data.  
+  - Ready for further queries, analysis, and integration into an analytical database.  
+
+```sql
+    -- Create file format and stage object
+    
+CREATE OR REPLACE FILE FORMAT MANAGE_DB.FILE_FORMATS.PARQUET_FORMAT
+    TYPE = 'parquet';
+
+CREATE OR REPLACE STAGE MANAGE_DB.EXTERNAL_STAGES.PARQUETSTAGE
+    url = 's3://snowflakeparquetdemo'   
+    FILE_FORMAT = MANAGE_DB.FILE_FORMATS.PARQUET_FORMAT;
+    
+    -- Preview the data
+    
+LIST  @MANAGE_DB.EXTERNAL_STAGES.PARQUETSTAGE;   
+    
+SELECT * FROM @MANAGE_DB.EXTERNAL_STAGES.PARQUETSTAGE;
+
+-- File format in Queries
+
+CREATE OR REPLACE STAGE MANAGE_DB.EXTERNAL_STAGES.PARQUETSTAGE
+    url = 's3://snowflakeparquetdemo'  ;
+    
+SELECT * 
+FROM @MANAGE_DB.EXTERNAL_STAGES.PARQUETSTAGE
+(file_format => 'MANAGE_DB.FILE_FORMATS.PARQUET_FORMAT');
+
+-- Quotes can be omitted in case of the current namespace
+USE MANAGE_DB.FILE_FORMATS;
+
+SELECT * 
+FROM @MANAGE_DB.EXTERNAL_STAGES.PARQUETSTAGE
+(file_format => MANAGE_DB.FILE_FORMATS.PARQUET_FORMAT);
+
+
+CREATE OR REPLACE STAGE MANAGE_DB.EXTERNAL_STAGES.PARQUETSTAGE
+    url = 's3://snowflakeparquetdemo'   
+    FILE_FORMAT = MANAGE_DB.FILE_FORMATS.PARQUET_FORMAT;
+
+    -- Syntax for Querying unstructured data
+
+SELECT 
+$1:__index_level_0__,
+$1:cat_id,
+$1:date,
+$1:"__index_level_0__",
+$1:"cat_id",
+$1:"d",
+$1:"date",
+$1:"dept_id",
+$1:"id",
+$1:"item_id",
+$1:"state_id",
+$1:"store_id",
+$1:"value"
+FROM @MANAGE_DB.EXTERNAL_STAGES.PARQUETSTAGE;
+
+    -- Date conversion
+    
+SELECT 1;
+
+SELECT DATE(365*60*60*24);
+
+    -- Querying with conversions and aliases
+    
+SELECT 
+$1:__index_level_0__::int as index_level,
+$1:cat_id::VARCHAR(50) as category,
+DATE($1:date::int ) as Date,
+$1:"dept_id"::VARCHAR(50) as Dept_ID,
+$1:"id"::VARCHAR(50) as ID,
+$1:"item_id"::VARCHAR(50) as Item_ID,
+$1:"state_id"::VARCHAR(50) as State_ID,
+$1:"store_id"::VARCHAR(50) as Store_ID,
+$1:"value"::int as value
+FROM @MANAGE_DB.EXTERNAL_STAGES.PARQUETSTAGE;
+
+```
+
+## Loading PAQUET Data
+
+- **Querying Parquet Data**  
+  - Use `:` to refer to the objects in Parquet files for querying specific data.  
+  - You can also transform the data types of the columns directly when querying the data.  
+
+- **Adding Metadata**  
+  - **File Name**: Query the file name using `metadata$filename`.  
+  - **Row Number**: Query the row number in each file using `metadata$row_number`.  
+  - **Timestamp**: Add the load timestamp with the function `SQL_TO_TIMESTAMP_NTZ()` (no time zone).  
+    - If you don't use the `SQL_TO_TIMESTAMP_NTZ()` function, the timestamp will include the time zone.  
+
+- **Timestamp Example**  
+  - Using `SQL_TO_TIMESTAMP_NTZ()`: Timestamp will not include time zone.  
+  - Without `SQL_TO_TIMESTAMP_NTZ()`: Timestamp will include time zone information.  
+
+- **Creating the Destination Table**  
+  - After querying and adding necessary metadata (e.g., row number, file name, timestamp), create a destination table.  
+  - It's important to include **row number** and **timestamp** as defaults in the destination table to track the data.  
+
+- **Loading Data into the Table**  
+  - Use `INSERT INTO` with a **SELECT statement** to copy data into the destination table.  
+  - Ensure no errors occurred during the data loading process.  
+
+- **Best Practices**  
+  - It’s recommended to load the raw data first into a staging table before transforming and copying it into the final table.  
+  - This extra step helps with error tracking and gives more control over the data pipeline. However, it’s optional based on use case.  
+
+- **Summary**  
+  - You can efficiently query Parquet data, add metadata (file name, row number, timestamp), and load it into the final analytical table using Snowflake's SQL features.
+
+```sql
+    -- Adding metadata
+    
+SELECT 
+$1:__index_level_0__::int as index_level,
+$1:cat_id::VARCHAR(50) as category,
+DATE($1:date::int ) as Date,
+$1:"dept_id"::VARCHAR(50) as Dept_ID,
+$1:"id"::VARCHAR(50) as ID,
+$1:"item_id"::VARCHAR(50) as Item_ID,
+$1:"state_id"::VARCHAR(50) as State_ID,
+$1:"store_id"::VARCHAR(50) as Store_ID,
+$1:"value"::int as value,
+METADATA$FILENAME as FILENAME,
+METADATA$FILE_ROW_NUMBER as ROWNUMBER,
+TO_TIMESTAMP_NTZ(current_timestamp) as LOAD_DATE
+FROM @MANAGE_DB.EXTERNAL_STAGES.PARQUETSTAGE;
+
+
+SELECT TO_TIMESTAMP_NTZ(current_timestamp);
+
+   -- Create destination table
+
+CREATE OR REPLACE TABLE OUR_FIRST_DB.PUBLIC.PARQUET_DATA (
+    ROW_NUMBER int,
+    index_level int,
+    cat_id VARCHAR(50),
+    date date,
+    dept_id VARCHAR(50),
+    id VARCHAR(50),
+    item_id VARCHAR(50),
+    state_id VARCHAR(50),
+    store_id VARCHAR(50),
+    value int,
+    Load_date timestamp default TO_TIMESTAMP_NTZ(current_timestamp));
+
+   -- Load the parquet data
+   
+COPY INTO OUR_FIRST_DB.PUBLIC.PARQUET_DATA
+    FROM (SELECT 
+            METADATA$FILE_ROW_NUMBER,
+            $1:__index_level_0__::int,
+            $1:cat_id::VARCHAR(50),
+            DATE($1:date::int ),
+            $1:"dept_id"::VARCHAR(50),
+            $1:"id"::VARCHAR(50),
+            $1:"item_id"::VARCHAR(50),
+            $1:"state_id"::VARCHAR(50),
+            $1:"store_id"::VARCHAR(50),
+            $1:"value"::int,
+            TO_TIMESTAMP_NTZ(current_timestamp)
+        FROM @MANAGE_DB.EXTERNAL_STAGES.PARQUETSTAGE);
+    
+SELECT * FROM OUR_FIRST_DB.PUBLIC.PARQUET_DATA;
+
+```
+
+# Performance Optimisation
+
+## Performance Considerations in Snowflake
+
+- **Importance of Performance Optimization**  
+  - Faster queries lead to cost savings since compute power is billed based on usage.  
+  - Optimizing performance reduces the need for extensive compute resources, thus saving costs.
+
+- **Traditional Optimization Techniques**  
+  - **Indexes and Primary Keys**: Used to speed up query performance.  
+  - **Table Partitions**: Helps in reducing full table scans for larger tables.  
+  - **Query Execution Plans**: Analyzing and optimizing the query execution plan.  
+
+- **Snowflake's Automated Optimizations**  
+  - **Micro-Partitions**: Snowflake automatically manages partitions to optimize performance.  
+  - **No Manual Optimization**: Many traditional tasks like index creation and partitioning are automated.  
+  - **Focus on Data Design**: While many optimizations are handled by Snowflake, we can still enhance performance by focusing on data types, file splitting, and warehouse design.
+
+- **Optimization Strategies in Snowflake**  
+  - **Dedicated Warehouses**: Create warehouses for specific user groups based on their unique needs and query types.  
+  - **Scaling**:  
+    - **Scaling Up**: Increase the size of the warehouse for complex queries or heavy workloads.  
+    - **Scaling Out (Multi-Cluster Warehouses)**: Add more clusters to handle varying or high concurrency workloads, useful for peak hours or more concurrent users.
+
+- **Cluster Keys for Larger Tables**  
+  - **Cluster Keys**: Used to improve query performance by optimizing how data is accessed, especially for large tables.
+
+- **Caching Mechanism**  
+  - **Understand Caching**: Maximizing the benefits of Snowflake’s caching mechanism can improve performance further.
+
+- **Automatic Scaling**  
+  - **Automatic Scaling**: Managed by Snowflake, but understanding how it works can help you design your usage patterns for maximum efficiency.  
+
+## Create dedicated virtual warehouse for different user groups or work groups
+
+- **Purpose of Dedicated Warehouses**: 
+  - Tailored for different teams or applications with varying workloads, such as BI teams, database admins, and data scientists.
+  - Ensures the right size and type of warehouse for specific needs, improving performance.
+
+- **Steps for Implementation**:
+  1. **Identify User Groups**: Start by identifying different departments or teams (e.g., marketing, BI, data science).
+  2. **Create Dedicated Warehouses**: Set up individual warehouses for each team or group with specific requirements.
+  3. **Assign Users**: Assign users or groups to the corresponding dedicated warehouse.
+
+- **Considerations**:
+  - **Avoid Too Many Warehouses**: Creating too many fine-grained warehouses can lead to inefficient use (starting and suspending frequently, leading to higher costs).
+  - **Group Similar Teams**: Instead of creating separate warehouses for very small teams, group similar teams together based on their workload.
+  - **Review and Refine**: Regularly review the warehouse setup and refine it based on evolving team needs and workload patterns.
+
+- **Optimizing Cost**: 
+  - By avoiding underutilized warehouses and managing scaling efficiently, cost savings can be achieved.
+
+- **Review Process**: Warehouse setup should be refined over time to ensure it matches workload and usage patterns.
+
+
+## Implement dedicated virtual warehouse
+
+- **Scenario Overview**:
+  - Two user groups identified: **Data Scientists** and **Database Administrators (DBAs)**.
+  - Data scientists need a **larger warehouse** (size: small), and DBAs need a **smaller warehouse** (size: extra small).
+
+- **Creating Warehouses**:
+  - Use `CREATE WAREHOUSE` command to set up the warehouses.
+  - Example for Data Science Warehouse:  
+    - Warehouse size: **small**  
+    - Scaling policy: **standard**  
+    - Suspend time: **5 minutes**  
+    - Resume time: **True**
+  - Example for DBA Warehouse:  
+    - Warehouse size: **extra small**  
+    - Same settings as the Data Science Warehouse.
+  - Alternatively, warehouses can be created using the **Snowflake UI** (Admin section).
+
+- **Assigning Warehouses to Roles**:
+  1. Create roles for each group: **Data Scientist** and **DBA**.
+  2. Grant **USAGE** permissions on the respective warehouse to the roles using `GRANT USAGE ON WAREHOUSE`.
+
+- **Creating Users**:
+  - Use `CREATE USER` to set up users (e.g., Data Scientist 1).
+  - Set the **default role** for users and assign them to their respective warehouse.
+  - If **auto resume** is set to **True**, the warehouse will automatically start when the user executes a query.
+
+- **Testing Access**:
+  - Log in as a user (e.g., **Data Scientist 1**) and confirm access to the assigned warehouse.
+  - In Snowflake UI, the warehouse is accessible under the user’s role.
+
+- **Best Practices**:
+  - After testing, **drop** all created objects (roles, users, warehouses) to avoid unnecessary resource consumption.
+  - Follow this method to ensure that the users in different roles have access to the appropriate warehouse.
+
+This setup allows for efficient resource allocation and ensures each group gets the correct performance capabilities.
+
+```sql
+//  Create virtual warehouse for data scientist & DBA
+
+// Data Scientists
+CREATE WAREHOUSE DS_WH 
+WITH WAREHOUSE_SIZE = 'SMALL'
+WAREHOUSE_TYPE = 'STANDARD' 
+AUTO_SUSPEND = 300 
+AUTO_RESUME = TRUE 
+MIN_CLUSTER_COUNT = 1 
+MAX_CLUSTER_COUNT = 1 
+SCALING_POLICY = 'STANDARD';
+
+// DBA
+CREATE WAREHOUSE DBA_WH 
+WITH WAREHOUSE_SIZE = 'XSMALL'
+WAREHOUSE_TYPE = 'STANDARD' 
+AUTO_SUSPEND = 300 
+AUTO_RESUME = TRUE 
+MIN_CLUSTER_COUNT = 1 
+MAX_CLUSTER_COUNT = 1 
+SCALING_POLICY = 'STANDARD';
+
+
+// Create role for Data Scientists & DBAs
+
+CREATE ROLE DATA_SCIENTIST;
+GRANT USAGE ON WAREHOUSE DS_WH TO ROLE DATA_SCIENTIST;
+
+CREATE ROLE DBA;
+GRANT USAGE ON WAREHOUSE DBA_WH TO ROLE DBA;
+
+
+// Setting up users with roles
+
+// Data Scientists
+CREATE USER DS1 PASSWORD = 'DS1' LOGIN_NAME = 'DS1' DEFAULT_ROLE='DATA_SCIENTIST' DEFAULT_WAREHOUSE = 'DS_WH'  MUST_CHANGE_PASSWORD = FALSE;
+CREATE USER DS2 PASSWORD = 'DS2' LOGIN_NAME = 'DS2' DEFAULT_ROLE='DATA_SCIENTIST' DEFAULT_WAREHOUSE = 'DS_WH'  MUST_CHANGE_PASSWORD = FALSE;
+CREATE USER DS3 PASSWORD = 'DS3' LOGIN_NAME = 'DS3' DEFAULT_ROLE='DATA_SCIENTIST' DEFAULT_WAREHOUSE = 'DS_WH'  MUST_CHANGE_PASSWORD = FALSE;
+
+GRANT ROLE DATA_SCIENTIST TO USER DS1;
+GRANT ROLE DATA_SCIENTIST TO USER DS2;
+GRANT ROLE DATA_SCIENTIST TO USER DS3;
+
+// DBAs
+CREATE USER DBA1 PASSWORD = 'DBA1' LOGIN_NAME = 'DBA1' DEFAULT_ROLE='DBA' DEFAULT_WAREHOUSE = 'DBA_WH'  MUST_CHANGE_PASSWORD = FALSE;
+CREATE USER DBA2 PASSWORD = 'DBA2' LOGIN_NAME = 'DBA2' DEFAULT_ROLE='DBA' DEFAULT_WAREHOUSE = 'DBA_WH'  MUST_CHANGE_PASSWORD = FALSE;
+
+GRANT ROLE DBA TO USER DBA1;
+GRANT ROLE DBA TO USER DBA2;
+
+// Drop objects again
+
+DROP USER DBA1;
+DROP USER DBA2;
+
+DROP USER DS1;
+DROP USER DS2;
+DROP USER DS3;
+
+DROP ROLE DATA_SCIENTIST;
+DROP ROLE DBA;
+
+DROP WAREHOUSE DS_WH;
+DROP WAREHOUSE DBA_WH;
+```
+
+## Scaling Up/Down
+
+- **Scaling Up vs. Scaling Down**:
+  - **Scaling Up**: Increasing the size of the warehouse to handle more **complex queries**.
+  - **Scaling Down**: Decreasing the size of the warehouse when the workload becomes less complex.
+
+- **Choosing the Appropriate Size**:
+  - It is important to choose the right warehouse size based on workload complexity to avoid wasting resources or slowing down performance.
+  - **ETL Processes**: Adjust warehouse size based on the complexity of the ETL workload.
+  - **Workload Changes**: Scale the warehouse up or down depending on workload fluctuations at different times.
+
+- **Scaling Up for Query Complexity**:
+  - Scaling up is mostly about **increasing capacity to handle more complex queries** (not necessarily more users).
+  - **Not about more users**: Scaling up deals with the complexity of the queries; scaling out (adding clusters) is for more concurrent users.
+
+- **Practical Demonstration**:
+  - To **scale up** a warehouse:
+    1. Use the `ALTER WAREHOUSE` command and set the warehouse size.
+    2. Example: From "extra small" to "small" using:
+       ```sql
+       ALTER WAREHOUSE compute_warehouse SET WAREHOUSE_SIZE = 'SMALL';
+       ```
+    3. This change will be reflected immediately.
+
+  - **Scaling Down**: Same approach, just set the size to a smaller one.
+
+- **Scaling in Snowflake UI**:
+  - Navigate to the **Admin section** and click on **Warehouses**.
+  - Select the warehouse and click **edit** to change the size via the UI (e.g., from "small" to "extra small").
+
+- **Important Note**:
+  - **Scaling Up** improves performance by handling complex queries faster, while **scaling down** helps save resources when the workload is less complex.
+
+## Scaling Out
+
+- **Scaling Up vs. Scaling Out:**
+  - **Scaling Up**: Increases the size of the warehouse (CPU, memory, etc.) to handle more complex queries.
+  - **Scaling Out**: Adds more clusters to a multi-cluster warehouse to handle high volumes of concurrent queries and improve performance during periods of high user activity.
+
+- **Multi-cluster Warehouse:**
+  - Dynamically adds clusters to manage increased resource demand during high query volumes.
+  - **Auto-scaling**: Automatically adjusts the number of active clusters based on the workload, removing the need for manual scaling.
+
+- **Scaling Policies:**
+  - **Standard Scaling Policy**: Adds clusters more quickly when the workload exceeds current capacity.
+  - **Economy Scaling Policy**: Adds clusters more slowly to conserve resources and reduce costs.
+
+- **Best Practices:**
+  - Use **multi-cluster warehouses** by default if you have access to the **Enterprise Edition** or higher for dynamic scaling without managing multiple smaller warehouses.
+  - Set the **maximum number of clusters** high enough to handle peak workloads, but avoid limiting it unnecessarily to ensure faster query processing.
+
+- **Practical Demonstration:**
+  - A multi-cluster warehouse was created with **three clusters** and set to **Standard Scaling Policy**.
+  - **Computationally intensive queries** were executed to simulate high concurrency, triggering **auto-scaling** as the number of active queries increased.
+
+- **Code to Scale Out a Warehouse:**
+  - Example SQL to create a multi-cluster warehouse:
+  ```sql
+  CREATE WAREHOUSE my_multi_cluster_warehouse
+    WITH WAREHOUSE_SIZE = 'SMALL'
+    WAREHOUSE_TYPE = 'STANDARD'
+    MIN_CLUSTER_COUNT = 1
+    MAX_CLUSTER_COUNT = 3
+    SCALING_POLICY = 'STANDARD';
+  ```
+  - This creates a warehouse with:
+    - Starting size: **SMALL**
+    - Minimum clusters: **1**
+    - Maximum clusters: **3**
+    - **Standard scaling policy** for auto-scaling.
+
+- **Admin Interface for Scaling Out:**
+  - Navigate to **Admin** > **Warehouses** in Snowflake.
+  - Set the **Number of Clusters** to **3** and choose the **Scaling Policy** (Standard or Economy).
+  - Save the settings.
+
+- **Monitoring Scaling Out:**
+  - Monitor scaling by checking the **Warehouses** section. Snowflake automatically adds clusters as needed, reducing query queuing.
+
+- **Cost Considerations:**
+  - **Scaling out** balances performance and cost by distributing the load across multiple clusters, preventing unnecessary overhead.
+  - Set warehouses to auto-scale for periods of high user activity to reduce manual intervention and optimize resources.
+
+This demonstrates how Snowflake dynamically scales out by adding clusters to manage increasing workloads, improving both performance and cost efficiency.
+
+```sql
+SELECT * FROM SNOWFLAKE_SAMPLE_DATA.TPCDS_SF100TCL.WEB_SITE T1
+CROSS JOIN SNOWFLAKE_SAMPLE_DATA.TPCDS_SF100TCL.WEB_SITE T2
+CROSS JOIN SNOWFLAKE_SAMPLE_DATA.TPCDS_SF100TCL.WEB_SITE T3
+CROSS JOIN (SELECT TOP 57 * FROM SNOWFLAKE_SAMPLE_DATA.TPCDS_SF100TCL.WEB_SITE)  T4;
+```
+
+## Caching
+
+- **Caching Overview**:
+  - Caching in Snowflake is an **automated process** that stores query results to speed up execution.
+  - Once a query is executed, its result is **cached** and can be reused without reprocessing, improving performance.
+
+- **Caching Duration**:
+  - Cached results are stored for **24 hours** or until the **underlying data changes**.
+  - If data in the table changes, Snowflake will execute the query again instead of using outdated cached results.
+
+- **Cache Validity**:
+  - Snowflake automatically ensures that cached results are **valid**, meaning they are only reused if the underlying data hasn't changed.
+  - If data changes, Snowflake will re-execute the query to ensure accurate results.
+
+- **User Interaction with Caching**:
+  - Users **cannot directly control** the cache but can optimize caching by ensuring **similar queries are run on the same warehouse**.
+  - Caching benefits are maximized when **similar queries** are executed in the same warehouse, especially in cases where the same set of data is queried repeatedly (e.g., by a team of data scientists).
+
+- **Warehouse Usage for Caching**:
+  - To **maximize caching efficiency**, ensure that similar queries are directed to the **same warehouse**.
+  - **Dedicated warehouses** for specific teams or workloads can help leverage caching by running similar queries together.
+
+- **Benefits of Caching**:
+  - **Improves performance** by reducing the need to re-execute identical or similar queries.
+  - **Automatic management** of caching simplifies performance optimization for users.
+
+- **Practical Use**:
+  - While caching is automatic, users should consider directing similar queries to the same warehouse for optimal use of cached results.
+
+### Summary:
+Snowflake's automatic caching process can significantly improve query performance by reusing results for identical or similar queries. To optimize this, ensure similar queries run on the same warehouse, especially when dealing with recurring workloads or similar datasets.
+
+## Maximize Caching
+
+- **Initial Query Execution**:
+  - When a query is run for the first time, it may take longer to execute, especially for more complex queries (e.g., scanning large tables).
+  - Example: A query on a large table (100 million rows) took **1.4 seconds** to run for the first time.
+
+- **Query Profile Analysis**:
+  - After executing the query, we can view the **query profile** to see where most time was spent.
+  - In the example, **97% of the time was spent on scanning the table** (120MB), and the rest was spent on aggregation.
+
+- **Subsequent Query Execution**:
+  - Re-running the same query with the **same warehouse** results in **faster execution**, as Snowflake utilizes **cached results**.
+  - Example: The second execution took only **110 milliseconds**, demonstrating the benefit of cached results.
+
+- **Using Different Users**:
+  - Even if a **different user** executes the same query, as long as they use the **same warehouse**, they can also benefit from cached results.
+  - Example: After setting up a new user and role, the query executed by this new user took **115 milliseconds**, benefiting from query result reuse.
+
+- **Maximizing Caching Efficiency**:
+  - To maximize the benefit of caching, ensure that **similar queries** are executed on **the same warehouse**. This enables the cache to be reused and improves performance.
+  
+- **Clean-up**:
+  - It's important to **drop roles** and **users** after they are no longer needed to maintain a clean environment.
+
+### Summary:
+Caching in Snowflake can significantly speed up query execution by reusing results from previous queries. By running similar queries on the same warehouse, you maximize the benefit of caching. Additionally, cached results can be shared across different users as long as they use the same warehouse and the data hasn’t changed within 24 hours.
+
+```sql
+
+SELECT AVG(C_BIRTH_YEAR) FROM SNOWFLAKE_SAMPLE_DATA.TPCDS_SF100TCL.CUSTOMER
+
+// Setting up an additional user
+CREATE ROLE DATA_SCIENTIST;
+GRANT USAGE ON WAREHOUSE COMPUTE_WH TO ROLE DATA_SCIENTIST;
+
+CREATE USER DS1 PASSWORD = 'DS1' LOGIN_NAME = 'DS1' DEFAULT_ROLE='DATA_SCIENTIST' DEFAULT_WAREHOUSE = 'DS_WH'  MUST_CHANGE_PASSWORD = FALSE;
+GRANT ROLE DATA_SCIENTIST TO USER DS1;
+
+```
+
+## Clustering
+
+- **Cluster Keys Overview**:
+  - Cluster keys are a technique in Snowflake used to optimize query performance by organizing data into **micro-partitions**.
+  - They help **avoid full table scans**, reducing the time spent searching through large datasets to find relevant data.
+  - Snowflake **automatically manages** clustering, ensuring optimal performance without user intervention.
+
+- **How Cluster Keys Work**:
+  - Based on the chosen cluster key column(s), data is grouped into partitions (micro-partitions).
+  - When querying, Snowflake can focus only on relevant micro-partitions, rather than scanning the entire table.
+  
+- **Benefits**:
+  - This is particularly beneficial for **large tables**, especially when the data size spans terabytes.
+  - **Cluster keys** improve performance by reducing the time spent searching data.
+
+- **Customizing Cluster Keys**:
+  - Snowflake provides control to manually define **custom cluster keys** for specific use cases, especially when automatic clustering might not be optimal.
+  - For example, if querying frequently by **event date**, clustering by **event date** instead of **event ID** may improve query speed.
+
+- **Choosing the Right Cluster Key**:
+  - Select columns frequently used in **WHERE clauses** (e.g., **date columns** if you're often filtering by date).
+  - Columns frequently used in **joins** are also good candidates.
+  - Avoid columns with too many distinct values (e.g., unique IDs) or too few distinct values (e.g., boolean values).
+
+- **Cluster Key Implementation**:
+  - Cluster keys are specified during table creation using the **CLUSTER BY** statement.
+  - **Multiple columns** can be clustered together, and **expressions** can also be used (e.g., clustering by month instead of date).
+  - Cluster keys can also be **modified** later using **ALTER TABLE** and can be **dropped** if needed.
+
+- **Key Considerations**:
+  - **Clustering** works best for **large datasets**, particularly those where **data scanning** is a significant performance bottleneck.
+  - It is important to choose **appropriate clustering columns** based on the data’s usage patterns.
+
+- **Summary**:
+  - **Clustering** in Snowflake is an important technique for **optimizing performance**, especially with large tables.
+  - Snowflake **automatically handles clustering** but offers flexibility for users to **customize** the cluster keys based on query needs.
+
+## Clustering in practice
+
+- **Cluster Key Setup**:
+  - Begin by creating a table (e.g., `ORDERS_CACHING`) with sample data, including a date column.
+  - You may also use `CROSS JOINS` to expand the data size for testing.
+
+- **Performance Without Cluster Key**:
+  - Initially, test the performance without any cluster key, which may involve scanning the entire table.
+  - For example, a query might take around **half a second**, with **59 partitions** scanned in the query profile, indicating that no cluster key is set up for optimal performance.
+
+- **Changing Cluster Key**:
+  - After identifying the cluster key, alter the table to apply a new cluster key.
+  - This operation is **metadata-based** and may take some time to reflect in the micro-partitions (usually **30 to 60 minutes**).
+
+- **Performance After Cluster Key Change**:
+  - After waiting for the cluster key to take effect, running the query again may show an **improvement in scan time**.
+  - For instance, if the table now only scans **one partition**, this is called **partition pruning**, significantly speeding up the query.
+
+- **Partition Pruning**:
+  - With the correct cluster key, only relevant micro-partitions are scanned, reducing query time.
+  - This is especially useful for large tables, where scanning entire tables could be slow.
+
+- **Expression-Based Cluster Keys**:
+  - Snowflake allows clustering not only by single columns but also by **expressions** (e.g., using `MONTH(DATE)`).
+  - If certain expressions are commonly used in **WHERE clauses** or **joins**, clustering by those expressions can provide further optimization.
+  
+- **Query-Specific Cluster Keys**:
+  - Cluster keys should be chosen based on the **queries** that are run most frequently.
+  - Different types of queries may benefit from different cluster keys.
+  - Experimenting and understanding the queries in use may require **trial and error** to find the best cluster key.
+
+- **Conclusion**:
+  - While clustering can improve performance significantly by reducing table scans, the optimal cluster key varies based on the query patterns.
+  - Choosing the right cluster key requires understanding both the structure of the data and the common queries run on it.
+  
+  ```sql
+  // Publicly accessible staging area    
+
+CREATE OR REPLACE STAGE MANAGE_DB.external_stages.aws_stage
+    url='s3://bucketsnowflakes3';
+
+// List files in stage
+
+LIST @MANAGE_DB.external_stages.aws_stage;
+
+//Load data using copy command
+
+COPY INTO OUR_FIRST_DB.PUBLIC.ORDERS
+    FROM @MANAGE_DB.external_stages.aws_stage
+    file_format= (type = csv field_delimiter=',' skip_header=1)
+    pattern='.*OrderDetails.*';
+    
+
+// Create table
+
+CREATE OR REPLACE TABLE ORDERS_CACHING (
+ORDER_ID	VARCHAR(30)
+,AMOUNT	NUMBER(38,0)
+,PROFIT	NUMBER(38,0)
+,QUANTITY	NUMBER(38,0)
+,CATEGORY	VARCHAR(30)
+,SUBCATEGORY	VARCHAR(30)
+,DATE DATE)   ; 
+
+
+INSERT INTO ORDERS_CACHING 
+SELECT
+t1.ORDER_ID
+,t1.AMOUNT	
+,t1.PROFIT	
+,t1.QUANTITY	
+,t1.CATEGORY	
+,t1.SUBCATEGORY	
+,DATE(UNIFORM(1500000000,1700000000,(RANDOM())))
+FROM ORDERS t1
+CROSS JOIN (SELECT * FROM ORDERS) t2
+CROSS JOIN (SELECT TOP 100 * FROM ORDERS) t3;
+
+// Query Performance before Cluster Key
+
+SELECT * FROM ORDERS_CACHING  WHERE DATE = '2020-06-09';
+
+// Adding Cluster Key & Compare the result
+
+ALTER TABLE ORDERS_CACHING CLUSTER BY ( DATE ) ;
+
+SELECT * FROM ORDERS_CACHING  WHERE DATE = '2020-01-05';
+
+
+// Not ideal clustering & adding a different Cluster Key using function
+
+SELECT * FROM ORDERS_CACHING  WHERE MONTH(DATE)=11;
+
+ALTER TABLE ORDERS_CACHING CLUSTER BY ( MONTH(DATE) );
+```
