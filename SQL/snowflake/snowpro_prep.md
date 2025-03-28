@@ -42,6 +42,16 @@
 ##  2. <a name='AccountAccessandSecurity-18'></a>Account Access and Security - (18%)
 ##  3. <a name='PerformanceandCostOptimizationConcepts-16'></a>Performance and Cost Optimization Concepts -	(16%)
 ##  4. <a name='DataLoadingandUnloading-12'></a>Data Loading and Unloading -	(12%)
+
+### Semi-Structured Data
+
+- How will you store JSON data in Snowflake?
+   - Using a column of the [VARIANT](https://docs.snowflake.com/en/user-guide/semistructured-considerations) type.
+   - Semi-structured data is saved as VARIANT type in Snowflake tables, with a maximum limit size of 16 MB of uncompressed data, and it can be queried using JSON notation. However, in practice, the maximum size is usually smaller due to internal overhead. The maximum size is also dependent on the object being stored.
+   - A [VARIANT](https://docs.snowflake.com/en/sql-reference/data-types-semistructured#variant) can store a value of any other type, including OBJECT and ARRAY.
+
+
+
 ##  5. <a name='DataTransformations-18'></a>Data Transformations -	(18%)
 ##  6. <a name='DataProtectionandDataSharing-12'></a>Data Protection and Data Sharing -	(12%)
 
@@ -212,6 +222,17 @@
 
 
 
+<!-- 
+
+https://learn.snowflake.com/en/certifications/snowpro-core/
+
+https://docs.snowflake.com/en/guides
+https://docs.snowflake.com/en/user-guide/unstructured-intro
+https://docs.snowflake.com/en/sql-reference/functions-semistructured
+
+https://iqraanwar.medium.com/ 
+https://www.examtopics.com/exams/snowflake/snowpro-core/view/
+https://iqraanwar.medium.com/20-snowflake-snow-pro-core-certification-c3c5eb3bd728
 
 
 
@@ -222,7 +243,7 @@
 
 
 
-<!-- https://iqraanwar.medium.com/ -->
+-->
 
 
 
