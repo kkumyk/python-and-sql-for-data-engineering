@@ -1,124 +1,3 @@
-[1415 Students and Examinations](https://leetcode.com/problems/students-and-examinations/description/)
-
-```sql
-SELECT s.student_id,
-       s.student_name,
-       sub.subject_name,
-       COUNT(e.student_id) AS attended_exams
-FROM students s
-CROSS JOIN subjects sub
-LEFT JOIN examinations e
-    ON s.student_id = e.student_id
-    AND e.subject_name = sub.subject_name
-GROUP BY s.student_id, s.student_name, sub.subject_name
-ORDER BY s.student_id, sub.subject_name;
-```
-
-[1581. Customer Who Visited but Did Not Make Any Transactions](https://leetcode.com/problems/customer-who-visited-but-did-not-make-any-transactions/)
-
-```sql
--- join tables and filter nulls
-select v.customer_id, count(*) as count_no_trans
-from visits v
-left join transactions t
-on v.visit_id=t.visit_id
-where t.transaction_id is null
-group by v.customer_id
-
--- exclude visits in transactions
--- NOT IN makes clear that we only selecting visits that are not in transactions
-select customer_id, count(*) as count_no_trans
-from visits
-where visit_id not in (select visit_id from Transactions)
-group by customer_id
-
--- a more efficient query for some DBs with NOT EXISTS
--- NOT EXISTS here: Does a transaction exists for this visit? If not, count in. 
-
-select customer_id, count(*) as count_no_trans
-from visits v
-where not exists (
-    select 1 from Transactions t where t.visit_id=v.visit_id
-)
-group by customer_id
-```
-
-[197. Rising Temperature](https://leetcode.com/problems/rising-temperature/)
-```sql
-select today.id from Weather yesterday cross join Weather today where today.recorddate - yesterday.recorddate = 1 and today.temperature > yesterday.temperature 
-```
-
-[577. Employee Bonus](https://leetcode.com/problems/employee-bonus/)
-```sql
-select e.name, b.bonus from employee e left join bonus b on e.empId=b.empId where bonus < 1000 or bonus is null
-```
-
-[595. Big Countries](https://leetcode.com/problems/big-countries/)
-```sql
-select name, population, area from World where area>=3000000 or population>=25000000
-```
-
-[1661. Average Time of Process per Machine](https://leetcode.com/problems/average-time-of-process-per-machine/)
-```sql
-SELECT  machine_id,
-        ROUND(
-            AVG(
-            CASE 
-                WHEN activity_type = 'start' THEN -timestamp 
-                ELSE timestamp
-            END)::decimal * 2
-            , 3) AS processing_time
-FROM Activity
-GROUP BY machine_id
-ORDER BY machine_id ASC;
-```
-
-<!-- This query is more concise and might execute faster because it avoids a self-join and processes the data in a single pass.
-It uses a CASE statement within an aggregate function (AVG) to compute the average processing time directly. 
-
-Transforming start and end Timestamps in One Step:
-    CASE WHEN activity_type = 'start' THEN -timestamp ELSE timestamp END
-    This inverts start timestamps by making them negative while keeping end timestamps positive.
-
-Summing Over Each machine_id and Averaging
-    Since each (machine_id, process_id) pair has exactly one start and one end, summing them within AVG() results in:
-    AVG(end−start)
-    AVG(end−start)
-    Multiplying by 2 compensates for the effect of averaging over two rows per process (one start and one end).
-
-Using ROUND(..., 3) with Explicit Casting
-    ::decimal * 2 ensures correct rounding behavior in PostgreSQL.
-
--->
-
-[620. Not Boring Movies](https://leetcode.com/problems/not-boring-movies/description/)
-```sql
-SELECT id, movie, description, rating
-FROM Cinema
-WHERE id%2 != 0 AND description != 'boring'
-ORDER BY rating DESC
-
-SELECT id, movie, description, rating
-FROM Cinema
-WHERE id % 2 = 1 AND description != 'boring'
-ORDER BY rating DESC;
-```
-
-[1075. Project Employees I](https://leetcode.com/problems/project-employees-i/description/)
-```sql
-select p.project_id,
-round(sum(e.experience_years)/count(p.project_id)::numeric, 2) as average_years
-from Project p
-join Employee e
-on e.employee_id=p.employee_id
-group by project_id
-
-
-select project_id,round(avg(experience_years)::numeric,2) as average_years
-from Project p
-left join Employee e on e.employee_id=p.employee_id
-Group by project_id order by project_id;
-```
 
 [1633. Percentage of Users Attended a Contest](https://leetcode.com/problems/percentage-of-users-attended-a-contest/description/)
 ```sql
@@ -128,6 +7,16 @@ SELECT
 FROM Register r
 GROUP BY r.contest_id
 ORDER BY percentage DESC, contest_id ASC;
+
+
+select
+    r.contest_id,
+    round(count(distinct r.user_id) * 100.0 / u.total, 2) as percentage
+from Register r
+cross join (select count(user_id) as total from users) u
+group by r.contest_id, u.total
+order by percentage desc, r.contest_id asc
+
 ```
 
 [1211. Queries Quality and Percentage](https://leetcode.com/problems/queries-quality-and-percentage/description/)
@@ -399,29 +288,51 @@ SELECT ROUND(active_user::numeric / total_user, 2) AS fraction
 FROM active_consecutive, total_players;
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+[595. Big Countries](https://leetcode.com/problems/big-countries/)
+```sql
+select name, population, area from World where area>=3000000 or population>=25000000
 ```
+
+[1661. Average Time of Process per Machine](https://leetcode.com/problems/average-time-of-process-per-machine/)
+```sql
+SELECT  machine_id,
+        ROUND(
+            AVG(
+            CASE 
+                WHEN activity_type = 'start' THEN -timestamp 
+                ELSE timestamp
+            END)::decimal * 2
+            , 3) AS processing_time
+FROM Activity
+GROUP BY machine_id
+ORDER BY machine_id ASC;
+```
+
+<!-- This query is more concise and might execute faster because it avoids a self-join and processes the data in a single pass.
+It uses a CASE statement within an aggregate function (AVG) to compute the average processing time directly. 
+
+Transforming start and end Timestamps in One Step:
+    CASE WHEN activity_type = 'start' THEN -timestamp ELSE timestamp END
+    This inverts start timestamps by making them negative while keeping end timestamps positive.
+
+Summing Over Each machine_id and Averaging
+    Since each (machine_id, process_id) pair has exactly one start and one end, summing them within AVG() results in:
+    AVG(end−start)
+    AVG(end−start)
+    Multiplying by 2 compensates for the effect of averaging over two rows per process (one start and one end).
+
+Using ROUND(..., 3) with Explicit Casting
+    ::decimal * 2 ensures correct rounding behavior in PostgreSQL.
+
+-->
+
+
+
+
 
 <hr>
 
-### Revision Completed
+## Revision Completed
 
 [1757. Recyclable and Low Fat Products](https://leetcode.com/problems/recyclable-and-low-fat-products/)
 
@@ -502,3 +413,132 @@ left join EmployeeUNI eu
 on eu.id=e.id 
 ```
 Using <code>LEFT JOIN</code> ensures that we get all employees even if they don't have a corresponding entry in the employeeuni table. In no match was found "NULL" will be retured for the unique_id.
+
+[1415 Students and Examinations](https://leetcode.com/problems/students-and-examinations/description/)
+
+```sql
+SELECT s.student_id,
+       s.student_name,
+       sub.subject_name,
+       COUNT(e.student_id) AS attended_exams
+FROM students s
+CROSS JOIN subjects sub
+LEFT JOIN examinations e
+    ON s.student_id = e.student_id
+    AND e.subject_name = sub.subject_name
+GROUP BY s.student_id, s.student_name, sub.subject_name
+ORDER BY s.student_id, sub.subject_name;
+```
+
+
+[1581. Customer Who Visited but Did Not Make Any Transactions](https://leetcode.com/problems/customer-who-visited-but-did-not-make-any-transactions/)
+
+```sql
+-- join tables and filter nulls
+select v.customer_id, count(*) as count_no_trans
+from visits v
+left join transactions t
+on v.visit_id=t.visit_id
+where t.transaction_id is null
+group by v.customer_id
+
+-- exclude visits in transactions
+-- NOT IN makes clear that we only selecting visits that are not in transactions
+select customer_id, count(*) as count_no_trans
+from visits
+where visit_id not in (select visit_id from Transactions)
+group by customer_id
+
+
+select v.customer_id, count(*) as count_no_trans
+from Visits v
+left join Transactions t
+on t.visit_id=v.visit_id
+where v.visit_id not in (select visit_id from Transactions)
+group by v.customer_id
+
+-- a more efficient query for some DBs with NOT EXISTS
+-- NOT EXISTS here: Does a transaction exists for this visit? If not, count in. 
+
+select customer_id, count(*) as count_no_trans
+from visits v
+where not exists (
+    select 1 from Transactions t where t.visit_id=v.visit_id
+)
+group by customer_id
+```
+
+[197. Rising Temperature](https://leetcode.com/problems/rising-temperature/)
+```sql
+select today.id
+from Weather yesterday
+cross join Weather today
+where today.recorddate - yesterday.recorddate = 1
+and today.temperature > yesterday.temperature 
+
+
+select y.id
+from Weather y
+cross join Weather t
+where y.recordDate - t.recordDate = 1
+and y.temperature > t.temperature
+```
+
+
+[620. Not Boring Movies](https://leetcode.com/problems/not-boring-movies/description/)
+```sql
+SELECT id, movie, description, rating
+FROM Cinema
+WHERE id%2 != 0 AND description != 'boring'
+ORDER BY rating DESC
+
+SELECT id, movie, description, rating
+FROM Cinema
+WHERE id % 2 = 1 AND description != 'boring'
+ORDER BY rating DESC;
+
+select id, movie, description, rating
+from Cinema
+where id%2!=0 and description != 'boring'
+order by rating desc
+```
+
+
+[577. Employee Bonus](https://leetcode.com/problems/employee-bonus/)
+```sql
+select e.name, b.bonus
+from employee e
+left join bonus b
+on e.empId=b.empId
+where bonus < 1000
+or bonus is null
+
+select e.name, b.bonus
+from Employee e
+left join Bonus b
+on b.empId=e.empId
+where b.bonus<1000
+or b.bonus is null
+```
+
+[1075. Project Employees I](https://leetcode.com/problems/project-employees-i/description/)
+```sql
+select p.project_id,
+round(sum(e.experience_years)/count(p.project_id)::numeric, 2) as average_years
+from Project p
+join Employee e
+on e.employee_id=p.employee_id
+group by project_id
+
+select project_id, round(avg(experience_years)::numeric, 2) as average_years
+from Project p
+left join Employee e
+on e.employee_id=p.employee_id
+group by project_id order by project_id;
+
+select p.project_id, round(avg(experience_years)::numeric, 2) as average_years
+from Project p
+left join Employee e
+on p.employee_id=e.employee_id
+group by p.project_id
+```
