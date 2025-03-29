@@ -2836,7 +2836,7 @@ GRANT ROLE DATA_SCIENTIST TO USER DS1;
   - While clustering can improve performance significantly by reducing table scans, the optimal cluster key varies based on the query patterns.
   - Choosing the right cluster key requires understanding both the structure of the data and the common queries run on it.
   
-  ```sql
+```sql
   // Publicly accessible staging area    
 
 CREATE OR REPLACE STAGE MANAGE_DB.external_stages.aws_stage
@@ -2895,4 +2895,244 @@ SELECT * FROM ORDERS_CACHING  WHERE DATE = '2020-01-05';
 SELECT * FROM ORDERS_CACHING  WHERE MONTH(DATE)=11;
 
 ALTER TABLE ORDERS_CACHING CLUSTER BY ( MONTH(DATE) );
+```
+
+### Loading Data from GCP
+
+- **Creating a Bucket in GCP**  
+  - Navigate to the home ribbon; if not visible, open the menu.  
+  - Search for "Cloud Storage" and select it.  
+  - Click on "Create a bucket."  
+  - Assign a globally unique name (e.g., "Snowflake bucket GCP").  
+  - Leave default settings (region, access control).  
+  - Click to create the bucket.  
+
+- **Creating Additional Buckets**  
+  - Navigate back and create another bucket.  
+  - Example: One bucket for CSV files, another for JSON files.  
+  - Name the second bucket accordingly (e.g., "Snowflake bucket GCP JSON").  
+  - Keep default settings and complete the creation.  
+
+- **Uploading Files to Buckets**  
+  - Select a bucket and choose "Upload files."  
+  - Upload the *World Happiness Report* to the first bucket.  
+  - Upload a JSON file to the second bucket.  
+
+- **Next Steps**  
+  - Set up a connection between GCP and Snowflake using an integration object (covered in the next lecture).
+
+  ### Create integration object
+
+- **Create a Storage Integration in Snowflake**  
+  - Use the name `gcp_integration`.  
+  - Set the cloud provider to Google Cloud (`GCS`).  
+  - Ensure the integration is enabled by default.  
+  - Provide the path: specify either a direct path or full access to the entire bucket.  
+  - Add both bucket names to the allowed locations.  
+
+- **Retrieve Bucket Names from GCP**  
+  - Navigate to **Cloud Storage** in GCP.  
+  - Locate the storage account and copy the names of the two buckets.  
+  - Paste the bucket names into the Snowflake storage integration settings.  
+
+- **Describe the Storage Integration Object in Snowflake**  
+  - View properties like **allowed locations** and **blocked locations**.  
+  - Identify the **GCP service account** that Snowflake creates.  
+  - Copy the service account ID for permission assignment.  
+
+- **Grant Permissions in GCP**  
+  - Go to the **GCP Storage Account**.  
+  - Select both buckets and navigate to **Permissions**.  
+  - Add a **new principal** (the Snowflake service account).  
+  - Assign the **Storage Admin** role (needed for data unloading later).  
+  - Save the changes.  
+
+- **Next Steps**  
+  - Test the integration to ensure access.  
+  - Load data from GCP into Snowflake.  
+  - Try unloading data from Snowflake back to GCP (covered in the next lecture).
+
+```sql
+-- create integration object that contains the access information
+CREATE STORAGE INTEGRATION gcp_integration
+  TYPE = EXTERNAL_STAGE
+  STORAGE_PROVIDER = GCS
+  ENABLED = TRUE
+  STORAGE_ALLOWED_LOCATIONS = ('gcs://snow_csv_files', 'gcs://snow_json_files');
+
+  
+-- Describe integration object to provide access
+DESC STORAGE integration gcp_integration;
+
+```
+
+### Create Stage
+
+- **Set Up File Format Object**  
+  - Create a **CSV file format object** in Snowflake.  
+  - Set the **header to be skipped (set to 1)** since the file has a header.  
+
+- **Create a Stage in Snowflake**  
+  - Use the **storage integration** created earlier.  
+  - Point to the correct **GCP bucket** (e.g., `snowflakebucketgcp`).  
+  - Ensure the bucket URL is correctly replaced for your environment.  
+
+- **Test the Integration**  
+  - List the files in the GCP bucket from Snowflake.  
+  - Verify that the files appear as expected.  
+
+- **Next Steps**  
+  - Query the file data in Snowflake.  
+  - Copy data from the file into Snowflake tables.  
+  - Unload data from Snowflake tables back into GCP.  
+  - Explore bidirectional data movement in the upcoming lectures.
+
+```sql
+-- create file format
+create or replace file format exercise_db.public.fileformat_gcp
+    TYPE = CSV
+    FIELD_DELIMITER = ','
+    SKIP_HEADER = 1;
+
+-- create stage object
+create or replace stage exercise_db.public.stage_gcp
+    STORAGE_INTEGRATION = gcp_integration
+    URL = 'gcs://snow_csv_files'
+    FILE_FORMAT = fileformat_gcp;
+
+LIST @exercise_db.public.stage_gcp;
+```
+
+### Query & load data
+
+- **Query the File in GCP**  
+  - Ensure the file is available in the bucket.  
+  - Modify the **file format object** to **not skip the header (set to 0)**.  
+  - Query the file to inspect column names.  
+
+- **Create and Populate the Table in Snowflake**  
+  - Define a **happiness table** with appropriate columns and data types.  
+  - Use the **COPY command** to load data from the staged file into the table.  
+
+- **Debug Data Load Issues**  
+  - If errors occur (e.g., unrecognized column values), adjust the **file format object**.  
+  - Replace the file format object and reattempt the data copy.  
+
+- **Verify Data Load**  
+  - Select data from the newly created table to ensure proper loading.  
+
+- **Unload Data from Snowflake to GCP**  
+  - Leverage the **storage integration object** with its **admin role**.  
+  - Prepare for unloading data from Snowflake tables into files stored in GCP.  
+  - Further details on unloading will be covered in the next lecture.
+
+```sql
+---- Query files & Load data ----
+
+--query files
+SELECT 
+$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,
+$12,$13,$14,$15,$16,$17,$18,$19,$20
+FROM @exercise_db.public.stage_gcp;
+
+
+create or replace table happiness (
+    country_name varchar,
+    regional_indicator varchar,
+    ladder_score number(4,3),
+    standard_error number(4,3),
+    upperwhisker number(4,3),
+    lowerwhisker number(4,3),
+    logged_gdp number(5,3),
+    social_support number(4,3),
+    healthy_life_expectancy number(5,3),
+    freedom_to_make_life_choices number(4,3),
+    generosity number(4,3),
+    perceptions_of_corruption number(4,3),
+    ladder_score_in_dystopia number(4,3),
+    explained_by_log_gpd_per_capita number(4,3),
+    explained_by_social_support number(4,3),
+    explained_by_healthy_life_expectancy number(4,3),
+    explained_by_freedom_to_make_life_choices number(4,3),
+    explained_by_generosity number(4,3),
+    explained_by_perceptions_of_corruption number(4,3),
+    dystopia_residual number (4,3));
+    
+    
+COPY INTO HAPPINESS
+FROM @exercise_db.public.stage_gcp;
+
+SELECT * FROM HAPPINESS;
+```
+
+### Unload data
+
+- **Understand Data Unloading in Snowflake**  
+  - Unloading moves data from a **Snowflake table** to an **external cloud provider (GCP bucket)**.  
+  - Data is saved as a **CSV file** in a specified storage location.  
+
+- **Verify Required Permissions & Setup**  
+  - Ensure **ACCOUNTADMIN role** is in use.  
+  - Confirm usage of **DEMO_DB** (or appropriate database).  
+  - The **STORAGE_INTEGRATION** object and **FILE_FORMAT object** should already be created.  
+  - Set up the **stage** pointing to the GCP bucket, including a new subfolder for data storage.  
+
+- **Modify Storage Integration if Needed**  
+  - Use `ALTER STORAGE_INTEGRATION` to update properties like `allowed_locations`.  
+
+- **Unload Data Using COPY INTO Command**  
+  - Preview the data to be unloaded.  
+  - Use `COPY INTO` to transfer data from the **table** to the **stage** (GCP bucket).  
+  - Verify successful execution via output details (e.g., `rows_unloaded`, `input_bytes`, `output_bytes`).  
+
+- **Compression & Storage Verification**  
+  - By default, data is **automatically compressed**.  
+  - Compression type can be manually specified (e.g., `GZIP`).  
+  - Refresh the **GCP bucket** to confirm data is stored correctly.  
+
+- **Access & Download the Data**  
+  - Locate the new folder in the GCP bucket.  
+  - Verify the unloaded file and its compression format.  
+  - Download the file if needed.  
+
+- **Summary**  
+  - The **COPY INTO** command is used for both **loading and unloading** data.  
+  - Reversing source/destination switches between **importing to Snowflake** and **exporting to GCP**.  
+  - Ensure proper permissions and compression settings for optimal data handling.  
+
+```sql
+------- Unload data -----
+USE ROLE ACCOUNTADMIN;
+USE DATABASE EXERCISE_DB;
+
+
+-- create integration object that contains the access information
+CREATE STORAGE INTEGRATION gcp_integration
+  TYPE = EXTERNAL_STAGE
+  STORAGE_PROVIDER = GCS
+  ENABLED = TRUE
+  STORAGE_ALLOWED_LOCATIONS = ('gcs://snow_csv_files', 'gcs://snow_json_files');
+  
+  
+-- create file format
+create or replace file format exercise_db.public.fileformat_gcp
+    TYPE = CSV
+    FIELD_DELIMITER = ','
+    SKIP_HEADER = 1;
+
+-- create stage object
+create or replace stage exercise_db.public.stage_gcp
+    STORAGE_INTEGRATION = gcp_integration
+    URL = 'gcs://snow_csv_files/csv_happiness'
+    FILE_FORMAT = fileformat_gcp;
+
+
+ALTER STORAGE INTEGRATION gcp_integration
+SET  storage_allowed_locations=('gcs://snow_csv_files', 'gcs://snow_json_files');
+
+SELECT * FROM HAPPINESS;
+
+COPY INTO @stage_gcp
+FROM
+HAPPINESS;
 ```
