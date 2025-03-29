@@ -17,24 +17,28 @@ cross join (select count(user_id) as total from users) u
 group by r.contest_id, u.total
 order by percentage desc, r.contest_id asc
 
+
+select
+    r.contest_id,
+    round(( count(distinct r.user_id) * 100.0) / (select count(*) from Users), 2) as percentage
+from Register r
+group by r.contest_id
+order by percentage desc, contest_id
+
+
 ```
 
 [1211. Queries Quality and Percentage](https://leetcode.com/problems/queries-quality-and-percentage/description/)
 
 ```sql
-with query_stats as (
-    select query_name,
-    sum(rating::numeric/position) as total_quality, -- Dog: (5/1) + (5/2) + (1/200) = 7.505
-    count(*) as total_queries, -- Dog: 3 queries
-    count(*) filter(where rating < 3) as poor_queries -- Dog: 1 (1/200 row)
-    from queries
-    group by query_name
-)
+
 select
-    query_name,
-    round(total_quality / total_queries, 2) as quality,
-    round(100.0 * poor_queries / total_queries, 2) as poor_query_percentage
-from query_stats;
+        query_name,
+        round(avg(rating::numeric / position), 2) as quality,
+        round(avg(case when rating < 3 then 1 else 0 end) * 100, 2) as poor_query_percentage
+from queries
+group by query_name
+
 ```
 
 [2356. Number of Unique Subjects Taught by Each Teacher](https://leetcode.com/problems/number-of-unique-subjects-taught-by-each-teacher/description/)
