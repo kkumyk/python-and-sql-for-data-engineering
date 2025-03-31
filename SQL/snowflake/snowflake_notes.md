@@ -3136,3 +3136,172 @@ COPY INTO @stage_gcp
 FROM
 HAPPINESS;
 ```
+
+## Snowpipe
+### What is Snowpipe?
+
+#### **What is Snowpipe?**  
+- Snowpipe **automatically loads data** when a new file appears in a given bucket.  
+- No manual action is needed; the file is automatically loaded into a table.  
+- Especially useful for **transactional or event data** that needs immediate analysis.  
+
+#### **Key Features of Snowpipe**  
+- **Serverless feature** → Snowflake manages compute resources automatically.  
+- **No need for virtual warehouses** → Snowpipe handles the compute power dynamically.  
+
+#### **How Snowpipe Works**  
+1. A **new file is added** to a storage bucket.  
+2. **Snowpipe detects** the new file automatically.  
+3. An **event notification** is triggered to inform Snowpipe.  
+4. **Snowpipe loads the data** into the target table.  
+
+#### **Steps to Set Up Snowpipe**  
+- Create a **bucket** where files will be uploaded.  
+- Set up **event notifications** to trigger Snowpipe when new files arrive.  
+- Configure **Snowpipe** to automatically load data into the Snowflake table.  
+
+🔹 **Bottom Line:** Snowpipe enables **seamless, automated data ingestion** without manual intervention.
+
+## Setting Up Snowpipe
+
+1. **Create a Stage:** Establish a stage object in Snowflake to define the connection and location of the external storage (e.g., AWS S3) from which data will be copied.
+
+2. **Develop and Test a COPY Command:** Craft a COPY command to specify how data should be loaded from the stage into the target table. Testing this command ensures its correctness before integrating it into Snowpipe.
+
+3. **Create a Pipe:** Define a pipe in Snowflake that encapsulates the tested COPY command. This pipe will manage the continuous loading process.
+
+4. **Configure Event Notifications:** Set up event notifications in the cloud storage service (e.g., AWS S3) to trigger Snowpipe upon the arrival of new data files. This automation enables Snowpipe to load data as soon as files are staged.
+
+
+## Creating Stage
+
+```sql
+// Create table first
+CREATE OR REPLACE TABLE OUR_FIRST_DB.PUBLIC.employees (
+  id INT,
+  first_name STRING,
+  last_name STRING,
+  email STRING,
+  location STRING,
+  department STRING
+  );
+    
+
+// Create file format object
+CREATE OR REPLACE file format MANAGE_DB.file_formats.csv_fileformat
+    type = csv
+    field_delimiter = ','
+    skip_header = 1
+    null_if = ('NULL','null')
+    empty_field_as_null = TRUE;
+    
+    
+ // Create stage object with integration object & file format object
+CREATE OR REPLACE stage MANAGE_DB.external_stages.csv_folder
+    URL = 's3://snowflakes3bucket123/csv/snowpipe'
+    STORAGE_INTEGRATION = s3_int
+    FILE_FORMAT = MANAGE_DB.file_formats.csv_fileformat;
+   
+
+ // Create stage object with integration object & file format object
+LIST @MANAGE_DB.external_stages.csv_folder;
+
+
+// Create schema to keep things organized
+CREATE OR REPLACE SCHEMA MANAGE_DB.pipes;
+
+// Define pipe
+CREATE OR REPLACE pipe MANAGE_DB.pipes.employee_pipe
+auto_ingest = TRUE
+AS
+COPY INTO OUR_FIRST_DB.PUBLIC.employees
+FROM @MANAGE_DB.external_stages.csv_folder ;
+
+// Describe pipe
+DESC pipe employee_pipe;
+    
+SELECT * FROM OUR_FIRST_DB.PUBLIC.employees ;
+```
+
+## Create and configure pipe
+
+```sql
+
+// Define pipe
+CREATE OR REPLACE pipe MANAGE_DB.pipes.employee_pipe
+auto_ingest = TRUE
+AS
+COPY INTO OUR_FIRST_DB.PUBLIC.employees
+FROM @MANAGE_DB.external_stages.csv_folder  ;
+
+// Describe pipe
+DESC pipe employee_pipe;
+    
+SELECT * FROM OUR_FIRST_DB.PUBLIC.employees ;
+```
+
+## Manage pipes
+
+```sql
+-- Manage pipes -- 
+
+DESC pipe MANAGE_DB.pipes.employee_pipe;
+
+SHOW PIPES;
+
+SHOW PIPES like '%employee%';
+
+SHOW PIPES in database MANAGE_DB;
+
+SHOW PIPES in schema MANAGE_DB.pipes;
+
+SHOW PIPES like '%employee%' in Database MANAGE_DB;
+
+
+
+-- Changing pipe (alter stage or file format) --
+
+// Preparation table first
+CREATE OR REPLACE TABLE OUR_FIRST_DB.PUBLIC.employees2 (
+  id INT,
+  first_name STRING,
+  last_name STRING,
+  email STRING,
+  location STRING,
+  department STRING
+  );
+
+
+// Pause pipe
+ALTER PIPE MANAGE_DB.pipes.employee_pipe SET PIPE_EXECUTION_PAUSED = true;
+ 
+ 
+// Verify pipe is paused and has pendingFileCount 0 
+SELECT SYSTEM$PIPE_STATUS('MANAGE_DB.pipes.employee_pipe') ;
+ 
+ // Recreate the pipe to change the COPY statement in the definition
+CREATE OR REPLACE pipe MANAGE_DB.pipes.employee_pipe
+auto_ingest = TRUE
+AS
+COPY INTO OUR_FIRST_DB.PUBLIC.employees2
+FROM @MANAGE_DB.external_stages.csv_folder ;
+
+ALTER PIPE  MANAGE_DB.pipes.employee_pipe refresh;
+
+// List files in stage
+LIST @MANAGE_DB.external_stages.csv_folder ;
+
+SELECT * FROM OUR_FIRST_DB.PUBLIC.employees2;
+
+ // Reload files manually that where aleady in the bucket
+COPY INTO OUR_FIRST_DB.PUBLIC.employees2
+FROM @MANAGE_DB.external_stages.csv_folder;  
+
+
+// Resume pipe
+ALTER PIPE MANAGE_DB.pipes.employee_pipe SET PIPE_EXECUTION_PAUSED = false;
+
+// Verify pipe is running again
+SELECT SYSTEM$PIPE_STATUS('MANAGE_DB.pipes.employee_pipe') ;
+
+```
