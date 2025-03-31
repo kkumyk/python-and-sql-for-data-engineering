@@ -1,22 +1,23 @@
+<!-- 
+
+find in google search three most relevant snowprocore exam questions from the text below and suggested to which of the 6 sections to put them into. Also, provide the link to the snowflake documentation that confirms the right answers to these questions 
+
+1. Snowflake AI Data Cloud Features & Architecture
+2. Account Access and Security
+3. Performance and Cost Optimization Concepts
+4. Data Loading and Unloading
+5. Data Transformations
+6. Data Protection and Data Sharing
+
+ -->
+
 
 # SnowPro Core Exam Domains
 
-<!-- vscode-markdown-toc -->
-1. [Snowflake AI Data Cloud Features & Architecture -	(24%)](#SnowflakeAIDataCloudFeaturesArchitecture-24)
-2. [Account Access and Security - (18%)](#AccountAccessandSecurity-18)
-3. [Performance and Cost Optimization Concepts -	(16%)](#PerformanceandCostOptimizationConcepts-16)
-4. [Data Loading and Unloading -	(12%)](#DataLoadingandUnloading-12)
-5. [Data Transformations -	(18%)](#DataTransformations-18)
-6. [Data Protection and Data Sharing -	(12%)](#DataProtectionandDataSharing-12)
-
-<!-- vscode-markdown-toc-config
-	numbering=true
-	autoSave=true
-	/vscode-markdown-toc-config -->
-<!-- /vscode-markdown-toc -->
 
 
-##  1. <a name='SnowflakeAIDataCloudFeaturesArchitecture-24'></a>Snowflake AI Data Cloud Features & Architecture -	(24%)
+
+##  1. Snowflake AI Data Cloud Features & Architecture -	(24%)
 
 - What is the expiration period for a file URL used to access unstructured data?
    - The length of time specified in the expiration_time argument
@@ -39,9 +40,30 @@
 
 
 
-##  2. <a name='AccountAccessandSecurity-18'></a>Account Access and Security - (18%)
-##  3. <a name='PerformanceandCostOptimizationConcepts-16'></a>Performance and Cost Optimization Concepts -	(16%)
-##  4. <a name='DataLoadingandUnloading-12'></a>Data Loading and Unloading -	(12%)
+##  2. Account Access and Security - (18%)
+
+
+##  3. Performance and Cost Optimization Concepts -	(16%)
+- What compute resources does Snowpipe use for loading data?
+   - Snowpipe uses Snowflake-supplied compute resources.
+   - Unlike bulk data loading, which requires a user-specified warehouse to execute COPY statements, Snowpipe utilizes Snowflake-supplied compute resources for loading data. [doc](https://docs.snowflake.com/en/user-guide/data-load-snowpipe-intro#compute-resources)
+
+
+##  4. Data Loading and Unloading -	(12%)
+ 
+- How many days is load history for Snowpipe retained?
+   - 14 days​
+   - Snowflake stores load history for Snowpipe in the metadata of the pipe for 14 days. This information can be retrieved via a REST endpoint, SQL table function, or ACCOUNT_USAGE view.​ [doc](https://docs.snowflake.com/en/user-guide/data-load-snowpipe-intro#load-history)
+
+- How does Snowpipe detect new data files for loading?
+   - Snowpipe detects new data files using event notifications for cloud storage, which inform Snowpipe of the arrival of new data files to load.
+   - Automated data loads leverage event notifications for cloud storage to inform Snowpipe of the arrival of new data files. Snowpipe polls these event notifications from a queue and loads the new data files into the target table based on the parameters defined in a specified pipe object. [doc source] (https://docs.snowflake.com/en/user-guide/data-load-snowpipe-auto)
+
+- What is the purpose of creating a stage in Snowflake when setting up Snowpipe?
+   - A stage in Snowflake serves as a pointer to an external storage location (e.g., AWS S3) or an internal location within Snowflake. It acts as an intermediary storage area where data files are stored before being loaded into Snowflake tables. [doc](https://docs.snowflake.com/en/user-guide/data-load-s3-create-stage)
+   - Stages are essential components used for temporarily storing data files during loading and unloading operations. A stage specifies where data files are stored (that is, “staged”) so that the data in the files can be loaded into a table. [doc](https://docs.snowflake.com/en/user-guide/data-load-local-file-system-create-stage)
+
+
 
 ### Semi-Structured Data
 
@@ -52,8 +74,8 @@
 
 
 
-##  5. <a name='DataTransformations-18'></a>Data Transformations -	(18%)
-##  6. <a name='DataProtectionandDataSharing-12'></a>Data Protection and Data Sharing -	(12%)
+##  5. Data Transformations -	(18%)
+##  6. Data Protection and Data Sharing -	(12%)
 
 
 
