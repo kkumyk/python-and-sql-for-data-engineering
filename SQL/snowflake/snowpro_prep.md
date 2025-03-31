@@ -1,6 +1,6 @@
 <!-- 
 
-find in google search three most relevant snowprocore exam questions from the text below and suggested to which of the 6 sections to put them into. Also, provide the link to the snowflake documentation that confirms the right answers to these questions 
+find in google search three most relevant snowprocore exam questions to the         topic and suggest to which of the 6 sections to put them into. Also, provide the link to the snowflake documentation that confirms the right answers to these questions 
 
 1. Snowflake AI Data Cloud Features & Architecture
 2. Account Access and Security
@@ -8,6 +8,9 @@ find in google search three most relevant snowprocore exam questions from the te
 4. Data Loading and Unloading
 5. Data Transformations
 6. Data Protection and Data Sharing
+
+
+
 
  -->
 
