@@ -1,12 +1,41 @@
 
 [1633. Percentage of Users Attended a Contest](https://leetcode.com/problems/percentage-of-users-attended-a-contest/description/)
 ```sql
-SELECT 
-    r.contest_id, 
-    ROUND(COUNT(DISTINCT r.user_id) * 100.0 / (SELECT COUNT(*) FROM Users), 2) AS percentage
-FROM Register r
-GROUP BY r.contest_id
-ORDER BY percentage DESC, contest_id ASC;
+
+select
+    r.contest_id,
+    round(count(distinct r.user_id) * 100.0 / (select count(*) from Users), 2) as percentage
+from Register r
+group by r.contest_id
+order by percentage desc, contest_id
+
+SQL executes queries in the following order:
+
+-- 1️. FROM → Define tables and joins.
+-- 2️. WHERE → Apply row filtering.
+-- 3️. GROUP BY → Group data (if aggregation is used).
+-- 4️. HAVING → Filter grouped results.
+-- 5️. SELECT → Compute column expressions & assign aliases.
+-- 6️. ORDER BY → Sort results (can use SELECT aliases).
+-- 7️. LIMIT / OFFSET → Apply pagination.
+
+with
+    total_users as (
+        select count(user_id) as all_users from Users
+    ),
+    pre_calc as (
+        select
+            r.contest_id,
+            count(distinct r.user_id) as nr_reg
+        from Register r
+        group by r.contest_id
+    )
+select
+    p.contest_id,
+    round(cast(p.nr_reg as decimal) / nullif(tu.all_users, 0) * 100, 2) as percentage
+from pre_calc p
+cross join total_users tu
+order by percentage desc, p.contest_id asc
 
 
 select
@@ -16,15 +45,6 @@ from Register r
 cross join (select count(user_id) as total from users) u
 group by r.contest_id, u.total
 order by percentage desc, r.contest_id asc
-
-
-select
-    r.contest_id,
-    round(( count(distinct r.user_id) * 100.0) / (select count(*) from Users), 2) as percentage
-from Register r
-group by r.contest_id
-order by percentage desc, contest_id
-
 
 ```
 
@@ -39,15 +59,6 @@ select
 from queries
 group by query_name
 
-```
-
-[2356. Number of Unique Subjects Taught by Each Teacher](https://leetcode.com/problems/number-of-unique-subjects-taught-by-each-teacher/description/)
-```sql
-select
-    teacher_id,
-    count(distinct(subject_id)) as cnt
-from Teacher
-group by teacher_id
 ```
 
 [1141. User Activity for the Past 30 Days I](https://leetcode.com/problems/user-activity-for-the-past-30-days-i/description/)
@@ -67,14 +78,6 @@ select class
 from Courses
 group by class
 having count(student) >= 5
-```
-
-[1729. Find Followers Count](https://leetcode.com/problems/find-followers-count/description/)
-```sql
-select user_id, count(follower_id) as followers_count
-from Followers
-group by user_id
-order by user_id asc
 ```
 
 [619. Biggest Single Number](https://leetcode.com/problems/biggest-single-number/description/)
@@ -545,4 +548,25 @@ from Project p
 left join Employee e
 on p.employee_id=e.employee_id
 group by p.project_id
+```
+
+[2356. Number of Unique Subjects Taught by Each Teacher](https://leetcode.com/problems/number-of-unique-subjects-taught-by-each-teacher/description/)
+```sql
+select
+    teacher_id,
+    count(distinct subject_id) as cnt
+from Teacher
+group by teacher_id
+
+-- The GROUP BY clause is required here because you are using an aggregate function (COUNT(DISTINCT subject_id)). Key SQL Rule:
+-- Whenever you use an aggregate function in SELECT (like COUNT, SUM, AVG, etc.), all other columns must be grouped using GROUP BY.
+-- If you are using an aggregate function but also selecting non-aggregated columns, you must use GROUP BY to avoid errors!
+```
+
+[1729. Find Followers Count](https://leetcode.com/problems/find-followers-count/description/)
+```sql
+select user_id, count(follower_id) as followers_count
+from Followers
+group by user_id
+order by user_id 
 ```
