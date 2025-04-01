@@ -4,13 +4,12 @@
 
 select
     r.contest_id,
-    round(count(distinct r.user_id) * 100.0 / (select count(*) from Users), 2) as percentage
+    round(count(distinct r.user_id) * 100.0  / (select count(user_id) from Users), 2) as percentage
 from Register r
 group by r.contest_id
-order by percentage desc, contest_id
+order by percentage desc, r.contest_id asc
 
-SQL executes queries in the following order:
-
+-- SQL executes queries in the following order:
 -- 1️. FROM → Define tables and joins.
 -- 2️. WHERE → Apply row filtering.
 -- 3️. GROUP BY → Group data (if aggregation is used).
@@ -48,28 +47,22 @@ order by percentage desc, r.contest_id asc
 
 ```
 
-[1211. Queries Quality and Percentage](https://leetcode.com/problems/queries-quality-and-percentage/description/)
-
-```sql
-
-select
-        query_name,
-        round(avg(rating::numeric / position), 2) as quality,
-        round(avg(case when rating < 3 then 1 else 0 end) * 100, 2) as poor_query_percentage
-from queries
-group by query_name
-
-```
-
 [1141. User Activity for the Past 30 Days I](https://leetcode.com/problems/user-activity-for-the-past-30-days-i/description/)
 
 ```sql
 select
     activity_date as day,
     count(distinct user_id) as active_users
-from Activity
+from Activity   
 where activity_date between (date('2019-07-27') - interval '29' day) and date('2019-07-27')
 group by activity_date
+
+
+select activity_date as day , count(distinct user_id) as active_users
+from activity
+where activity_date <= '2019-07-27' and activity_date > '2019-06-27'
+group by activity_date;
+
 ```
 
 [596. Classes More Than 5 Students](https://leetcode.com/problems/classes-more-than-5-students/description/)
@@ -569,4 +562,15 @@ select user_id, count(follower_id) as followers_count
 from Followers
 group by user_id
 order by user_id 
+```
+
+[1211. Queries Quality and Percentage](https://leetcode.com/problems/queries-quality-and-percentage/description/)
+
+```sql
+select
+        query_name,
+        round(avg(rating::numeric / position), 2) as quality,
+        round(avg(case when rating < 3 then 1 else 0 end) * 100, 2) as poor_query_percentage
+from queries
+group by query_name
 ```
