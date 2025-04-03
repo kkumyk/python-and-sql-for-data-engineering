@@ -1,6 +1,8 @@
 <!-- 
 
-find in google search three most relevant snowprocore exam questions to the         topic and suggest to which of the 6 sections to put them into. Also, provide the link to the snowflake documentation that confirms the right answers to these questions 
+find in google search 10 most relevant snowprocore exam questions on the
+time travel
+topic and suggest to which of the 6 sections below to put them into. Also, provide the link to the snowflake documentation that confirms the right answers to these questions 
 
 1. Snowflake AI Data Cloud Features & Architecture
 2. Account Access and Security
@@ -9,15 +11,10 @@ find in google search three most relevant snowprocore exam questions to the     
 5. Data Transformations
 6. Data Protection and Data Sharing
 
-
-
-
  -->
 
 
 # SnowPro Core Exam Domains
-
-
 
 
 ##  1. Snowflake AI Data Cloud Features & Architecture -	(24%)
@@ -78,10 +75,22 @@ find in google search three most relevant snowprocore exam questions to the     
 
 
 ##  5. Data Transformations -	(18%)
+
+
 ##  6. Data Protection and Data Sharing -	(12%)
 
+- What features does Snowflake Time Travel enable?
+   - Snowflake Time Travel enables accessing historical data (i.e. data that has been changed or deleted) at any point within a defined period. It serves as a powerful tool for performing the following tasks:
+      - Restoring data-related objects (tables, schemas, and databases) that might have been accidentally or intentionally deleted.
+      - Duplicating and backing up data from key points in the past.
+      - Analyzing data usage/manipulation over specified periods of time.
 
+- What are the default Time Travel and Fail-safe retention periods for transient tables?
+   - Time Travel - 0 or 1 (default is 1)
+   - Fail-safe - 0 days.
 
+- Does the Time Travel feature in Snowflake preserve data at the expense of running continuous backups?
+   - False
 
 
 
@@ -97,184 +106,28 @@ find in google search three most relevant snowprocore exam questions to the     
 
 
 
-<!-- **1. Core Architecture & Compute (Most Important for SnowPro Core Exam)**
 
- - Snowflake Architecture (DDL, DML, Snowflake Editions, Cloud Providers, Layers, Snowflake SQL Client)
 
- - Warehouses
-    - Scaling Policy
-    - Multi-cluster Warehouses and Multi-warehouse Modes
-    - Params you can configure
-1. Which of the following are valid Snowflake Virtual Warehouse Scaling Policies?
-    - Economy and Standard
-    - Economy: This policy scales the warehouse in a more cost-efficient way, typically by using fewer resources or by being more conservative in scaling up.
 
-    - Standard: This is the default scaling policy that offers a balance between cost and performance, dynamically scaling the warehouse as needed.
-<hr>
 
- - Resource Monitors
 
-    - Parameters and Types of Actions
 
- - Cache (Result caching, Query caching, and Warehouse cache)
 
- - Storage Features
 
-    - Fail Safe
 
-    - Time Travel
 
-    - Zero-Copy Cloning
-
-<hr>
-
- - Micro-partitions & Clustering Keys
-
-    - Micro-partitioning concept and benefits
-    - Use of Clustering keys for performance
-
-1. Snowflake provides a mechanism for its customers to override its natural clustering algorithms. This method is:
-    - Clustering keys
-    - By specifying a clustering key, you can control how the data is physically organized within the micro-partitions, which can be helpful for large datasets or complex queries.
-
-<hr>
-
- - Data Loading/Unloading
-
-    - COPY Command
-
-    - GET and PUT Commands
-
-    - Snowpipe
-
-**2. Data Management, Governance, & Security**
-
- - Roles & Access Management
-
-    - Default system roles (Public, Sysadmin, Securityadmin, Useradmin, etc.)
-
-    - Privileges and GRANT/REVOKE command
-
-    - Role Hierarchy & Role Management
-
- - Data Types
-
-    - Supported data types in Snowflake
-
-    - Special data types (e.g., VARIANT, OBJECT, ARRAY)
-
- - Shares
-
-    - Secure Data Sharing
-
-    - Reader Accounts
-
-  - Tagging and Security
-
-    - Tagging for data classification
-
-    - Dynamic Data Masking & Row Access Policies
-
- - Compliance (Overview and importance for governance)
-
-    - Understanding how Snowflake supports compliance standards (GDPR, HIPAA)
-
-    Networking & Security
-
-    - Network policies, OAuth, SSO, MFA
-
-**3. Advanced Features & Performance Optimization**
-
- - Views & Types
-
-    - Regular Views vs. Materialized Views
-
-    - Pros and cons of using each type
-
- - Stored Procedures & UDFs
-
-    - How to create and use them in Snowflake
-
-    - Benefits and use cases
-
- - Transactions & Streams
-
-    - How Streams work for change data capture
-
-    - Usage of transactions to maintain consistency
-
- - Performance Tuning
-
-    - Query optimization (e.g., pruning, clustering)
-
-    - Result caching and Query Acceleration Service (QAS)
-
-    - Query profiling and optimization techniques
-
-**Bonus Topics (Less Emphasis in Exam)**
-
- - External Tables & Data Lake Integration
-
-    - How Snowflake integrates with external data sources (S3, Azure Blob, Google Cloud Storage)
-
-    Replication & Failover
-
-    - Setting up Snowflake for high availability and disaster recovery
-
-**Not a Core Focus for SnowPro Certification (Optional)**
-
- - Data Marketplace & Ecosystem
-
-    - Understanding of the Snowflake Data Marketplace (not heavily tested in the exam)
-
- - Query Profile (Deep Dive)
-
-    - In-depth query profiling may not be as critical for the exam, but still beneficial for practical use.
-
- - Sequences
-
-    - Not a major focus for SnowPro Certification.
-
-
-
-
-
-
-
-
-
- -->
 
 
 
 <!-- 
-
 https://learn.snowflake.com/en/certifications/snowpro-core/
-
 https://docs.snowflake.com/en/guides
 https://docs.snowflake.com/en/user-guide/unstructured-intro
 https://docs.snowflake.com/en/sql-reference/functions-semistructured
-
 https://iqraanwar.medium.com/ 
 https://www.examtopics.com/exams/snowflake/snowpro-core/view/
 https://iqraanwar.medium.com/20-snowflake-snow-pro-core-certification-c3c5eb3bd728
-
-
-
-
-
-
-
-
-
-
--->
-
-
-
-<!-- 
 https://www.youtube.com/watch?v=ajhLLBGyeDM&list=PLba2xJ7yxHB5X2CMe7qZZu-V4LxNE1HbF
-
 https://www.youtube.com/watch?v=LaTXbpvCwcY
 https://www.youtube.com/watch?v=VMYGZo-ibAE
 https://www.youtube.com/watch?v=1hPbGshjndM
