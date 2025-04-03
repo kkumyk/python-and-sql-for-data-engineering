@@ -1,52 +1,3 @@
-
-[1633. Percentage of Users Attended a Contest](https://leetcode.com/problems/percentage-of-users-attended-a-contest/description/)
-```sql
-
-select
-    r.contest_id,
-    round(count(distinct r.user_id) * 100.0  / (select count(user_id) from Users), 2) as percentage
-from Register r
-group by r.contest_id
-order by percentage desc, r.contest_id asc
-
--- SQL executes queries in the following order:
--- 1️. FROM → Define tables and joins.
--- 2️. WHERE → Apply row filtering.
--- 3️. GROUP BY → Group data (if aggregation is used).
--- 4️. HAVING → Filter grouped results.
--- 5️. SELECT → Compute column expressions & assign aliases.
--- 6️. ORDER BY → Sort results (can use SELECT aliases).
--- 7️. LIMIT / OFFSET → Apply pagination.
-
-with
-    total_users as (
-        select count(user_id) as all_users from Users
-    ),
-    pre_calc as (
-        select
-            r.contest_id,
-            count(distinct r.user_id) as nr_reg
-        from Register r
-        group by r.contest_id
-    )
-select
-    p.contest_id,
-    round(cast(p.nr_reg as decimal) / nullif(tu.all_users, 0) * 100, 2) as percentage
-from pre_calc p
-cross join total_users tu
-order by percentage desc, p.contest_id asc
-
-
-select
-    r.contest_id,
-    round(count(distinct r.user_id) * 100.0 / u.total, 2) as percentage
-from Register r
-cross join (select count(user_id) as total from users) u
-group by r.contest_id, u.total
-order by percentage desc, r.contest_id asc
-
-```
-
 [1141. User Activity for the Past 30 Days I](https://leetcode.com/problems/user-activity-for-the-past-30-days-i/description/)
 
 ```sql
@@ -62,6 +13,10 @@ select activity_date as day , count(distinct user_id) as active_users
 from activity
 where activity_date <= '2019-07-27' and activity_date > '2019-06-27'
 group by activity_date;
+
+select activity_date AS day, count(distinct user_id) AS active_users from Activity
+where activity_date BETWEEN '2019-06-28' AND '2019-07-28'
+group by activity_date
 
 ```
 
@@ -84,14 +39,15 @@ with pre_processing as (
 )
 select max(num) as num
 from pre_processing
-```
 
-[1978. Employees Whose Manager Left the Company](https://leetcode.com/problems/employees-whose-manager-left-the-company/description/)
-```sql
-select employee_id from Employees
-where manager_id not in (select employee_id from Employees)
-and salary < 30000
-order by employee_id
+select max(num) as num
+from (
+    select num
+    from MyNumbers
+    group by num
+    having count(num)=1
+)
+
 ```
 
 [1731. The Number of Employees Which Report to Each Employee](https://leetcode.com/problems/the-number-of-employees-which-report-to-each-employee/description/)
@@ -573,4 +529,69 @@ select
         round(avg(case when rating < 3 then 1 else 0 end) * 100, 2) as poor_query_percentage
 from queries
 group by query_name
+```
+
+[1633. Percentage of Users Attended a Contest](https://leetcode.com/problems/percentage-of-users-attended-a-contest/description/)
+```sql
+
+select
+    r.contest_id,
+    round(count(distinct r.user_id) * 100.0  / (select count(user_id) from Users), 2) as percentage
+from Register r
+group by r.contest_id
+order by percentage desc, r.contest_id asc
+
+select
+    contest_id,
+    round((count(distinct user_id):: decimal / (select count(*) from Users)) * 100, 2) as percentage 
+from Register
+group by contest_id
+order by percentage desc, contest_id
+
+-- SQL executes queries in the following order:
+-- 1️. FROM → Define tables and joins.
+-- 2️. WHERE → Apply row filtering.
+-- 3️. GROUP BY → Group data (if aggregation is used).
+-- 4️. HAVING → Filter grouped results.
+-- 5️. SELECT → Compute column expressions & assign aliases.
+-- 6️. ORDER BY → Sort results (can use SELECT aliases).
+-- 7️. LIMIT / OFFSET → Apply pagination.
+
+with
+    total_users as (
+        select count(user_id) as all_users from Users
+    ),
+    pre_calc as (
+        select
+            r.contest_id,
+            count(distinct r.user_id) as nr_reg
+        from Register r
+        group by r.contest_id
+    )
+select
+    p.contest_id,
+    round(cast(p.nr_reg as decimal) / nullif(tu.all_users, 0) * 100, 2) as percentage
+from pre_calc p
+cross join total_users tu
+order by percentage desc, p.contest_id asc
+
+
+select
+    r.contest_id,
+    round(count(distinct r.user_id) * 100.0 / u.total, 2) as percentage
+from Register r
+cross join (select count(user_id) as total from users) u
+group by r.contest_id, u.total
+order by percentage desc, r.contest_id asc
+
+```
+
+[1978. Employees Whose Manager Left the Company](https://leetcode.com/problems/employees-whose-manager-left-the-company/description/)
+```sql
+
+select employee_id from Employees
+where manager_id not in (select employee_id from Employees)
+and salary < 30000
+order by employee_id
+
 ```
