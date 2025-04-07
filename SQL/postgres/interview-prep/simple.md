@@ -1,57 +1,23 @@
-[1141. User Activity for the Past 30 Days I](https://leetcode.com/problems/user-activity-for-the-past-30-days-i/description/)
-
-```sql
-select
-    activity_date as day,
-    count(distinct user_id) as active_users
-from Activity   
-where activity_date between (date('2019-07-27') - interval '29' day) and date('2019-07-27')
-group by activity_date
-
-
-select activity_date as day , count(distinct user_id) as active_users
-from activity
-where activity_date <= '2019-07-27' and activity_date > '2019-06-27'
-group by activity_date;
-
-select activity_date AS day, count(distinct user_id) AS active_users from Activity
-where activity_date BETWEEN '2019-06-28' AND '2019-07-28'
-group by activity_date
-
-```
-
-[596. Classes More Than 5 Students](https://leetcode.com/problems/classes-more-than-5-students/description/)
-```sql
-select class
-from Courses
-group by class
-having count(student) >= 5
-```
-
-[619. Biggest Single Number](https://leetcode.com/problems/biggest-single-number/description/)
-
-```sql
-with pre_processing as (
-    select num
-    from MyNumbers
-    group by num
-    having count(num)=1
-)
-select max(num) as num
-from pre_processing
-
-select max(num) as num
-from (
-    select num
-    from MyNumbers
-    group by num
-    having count(num)=1
-)
-
-```
-
 [1731. The Number of Employees Which Report to Each Employee](https://leetcode.com/problems/the-number-of-employees-which-report-to-each-employee/description/)
+
 ```sql
+
+-- most efficient in terms of logical clarity
+select
+    m.employee_id,
+    m.name,
+    count(e.employee_id) as reports_count,
+    round(avg(e.age)) as average_age
+from
+    Employees m
+join Employees e
+    on m.employee_id=e.reports_to
+group by
+    m.employee_id,
+    m.name
+order by
+    m.employee_id
+
 select
     e.reports_to as employee_id,
     m.name,
@@ -70,11 +36,43 @@ JOIN Employees f
 ON e.reports_to = f.employee_id
 group by f.employee_id, f.name
 order by f.employee_id
+
+
 ```
 
 
 [1789. Primary Department for Each Employee](https://leetcode.com/problems/primary-department-for-each-employee/)
+
 ```sql
+
+select
+    employee_id,
+    department_id
+from
+    Employee
+where employee_id in (
+    select
+        employee_id
+    from
+        Employee
+    group by employee_id
+    having count(employee_id)=1)
+    or primary_flag = 'Y'
+
+
+select 
+    employee_id,
+    department_id
+from Employee
+where primary_flag = 'Y' or employee_id in (
+    select
+        employee_id
+    from
+        Employee
+    group by employee_id
+    having count(employee_id) = 1
+)
+
 with ids as (select e.employee_id
 from Employee e
 group by e.employee_id
@@ -88,27 +86,33 @@ select employee_id, department_id
 from Employee
 where primary_flag='Y'
 
-
-SELECT employee_id, department_id FROM Employee WHERE employee_id IN (
-SELECT employee_id FROM Employee
-GROUP BY employee_id HAVING COUNT(*) =1) OR primary_flag = 'Y'
 ```
 
 
 [610. Triangle Judgement](https://leetcode.com/problems/triangle-judgement/description/)
+
 ```sql
+
 select x, y, z, 
 case
-    when x+y>z and y+z>x and z+x> y then 'Yes' else 'No'
+    when y+z>x and z+x>y and x+y>z then 'Yes' else 'No'
 end as triangle
-from triangle
+from Triangle
+
 ```
 
+
+
 [1667. Fix Names in a Table](https://leetcode.com/problems/fix-names-in-a-table/description/)
+
 ```sql
-select user_id,
-upper(substring(name from 1 for 1)) || lower(substring(name from 2)) as name
-from Users order by user_id
+
+select
+    user_id,
+    upper(substring(name from 1 for 1)) || lower(substring(name from 2)) as name
+from Users
+order by user_id
+
 ```
 
 [Patients with a condition](https://leetcode.com/problems/patients-with-a-condition/description/)
@@ -593,5 +597,67 @@ select employee_id from Employees
 where manager_id not in (select employee_id from Employees)
 and salary < 30000
 order by employee_id
+
+```
+
+[596. Classes More Than 5 Students](https://leetcode.com/problems/classes-more-than-5-students/description/)
+```sql
+select class
+from Courses
+group by class
+having count(student) >= 5
+```
+
+
+[619. Biggest Single Number](https://leetcode.com/problems/biggest-single-number/description/)
+
+```sql
+with pre_processing as (
+    select num
+    from MyNumbers
+    group by num
+    having count(num)=1
+)
+select max(num) as num
+from pre_processing
+
+
+select max(num) as num
+from (
+    select num
+    from MyNumbers
+    group by num
+    having count(num)=1
+)
+
+```
+
+[1141. User Activity for the Past 30 Days I](https://leetcode.com/problems/user-activity-for-the-past-30-days-i/description/)
+
+```sql
+select
+    activity_date as day,
+    count(distinct user_id) as active_users
+from Activity   
+where activity_date between (date('2019-07-27') - interval '29' day) and date('2019-07-27')
+group by activity_date
+
+
+select activity_date as day , count(distinct user_id) as active_users
+from activity
+where activity_date <= '2019-07-27' and activity_date > '2019-06-27'
+group by activity_date;
+
+select activity_date AS day, count(distinct user_id) AS active_users from Activity
+where activity_date BETWEEN '2019-06-28' AND '2019-07-28'
+group by activity_date
+
+select
+    activity_date as day,
+    count(distinct user_id) as active_users
+from
+    Activity
+where activity_date between date('2019-06-28') and date('2019-07-27')
+group by activity_date 
 
 ```
