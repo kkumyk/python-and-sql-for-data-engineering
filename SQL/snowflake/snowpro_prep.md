@@ -96,6 +96,16 @@ topic and suggest to which of the 6 sections below to put them into. Also, provi
 
 
 
+True or False: The COPY command can load data using a SELECT query.
+Answer: True
+A. True
+Explanation: When loading data into a table using the COPY command, Snowflake allows you to do simple
+transformations on the data as it is being loaded by using a SELECT statement. During the load process, the COPY
+command allows for modifying the order of columns, omitting one or more columns, and casting data into specified data
+types. It is also possible to truncate data using the COPY command if it is larger than the desired column width.
+https://docs.snowflake.com/en/user-guide/data-load-transform 
+
+
 
 
 
