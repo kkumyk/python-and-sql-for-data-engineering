@@ -1,107 +1,3 @@
-[1731. The Number of Employees Which Report to Each Employee](https://leetcode.com/problems/the-number-of-employees-which-report-to-each-employee/description/)
-
-```sql
-
--- most efficient in terms of logical clarity
-select
-    m.employee_id,
-    m.name,
-    count(e.employee_id) as reports_count,
-    round(avg(e.age)) as average_age
-from
-    Employees m
-join Employees e
-    on m.employee_id=e.reports_to
-group by
-    m.employee_id,
-    m.name
-order by
-    m.employee_id
-
-select
-    e.reports_to as employee_id,
-    m.name,
-    count(e.employee_id) as reports_count,
-    round(avg(e.age)) as average_age
-from Employees e
-join Employees m on m.employee_id = e.reports_to
-where e.reports_to <> 0
-group by e.reports_to, m.name
-order by e.reports_to
-
-
-select f.employee_id, f.name, count(1) as reports_count, ROUND(AVG(e.age), 0) as average_age
-from Employees e
-JOIN Employees f
-ON e.reports_to = f.employee_id
-group by f.employee_id, f.name
-order by f.employee_id
-
-
-```
-
-
-[1789. Primary Department for Each Employee](https://leetcode.com/problems/primary-department-for-each-employee/)
-
-```sql
-
-select
-    employee_id,
-    department_id
-from
-    Employee
-where employee_id in (
-    select
-        employee_id
-    from
-        Employee
-    group by employee_id
-    having count(employee_id)=1)
-    or primary_flag = 'Y'
-
-
-select 
-    employee_id,
-    department_id
-from Employee
-where primary_flag = 'Y' or employee_id in (
-    select
-        employee_id
-    from
-        Employee
-    group by employee_id
-    having count(employee_id) = 1
-)
-
-with ids as (select e.employee_id
-from Employee e
-group by e.employee_id
-having count(e.employee_id)=1
-)
-select i.employee_id, e.department_id
-from ids i
-left join Employee e on i.employee_id=e.employee_id
-union all
-select employee_id, department_id
-from Employee
-where primary_flag='Y'
-
-```
-
-
-[610. Triangle Judgement](https://leetcode.com/problems/triangle-judgement/description/)
-
-```sql
-
-select x, y, z, 
-case
-    when y+z>x and z+x>y and x+y>z then 'Yes' else 'No'
-end as triangle
-from Triangle
-
-```
-
-
 
 [1667. Fix Names in a Table](https://leetcode.com/problems/fix-names-in-a-table/description/)
 
@@ -115,6 +11,7 @@ order by user_id
 
 ```
 
+
 [Patients with a condition](https://leetcode.com/problems/patients-with-a-condition/description/)
 
 ```sql
@@ -123,9 +20,17 @@ from patients
 where conditions like 'DIAB1%' or conditions like '% DIAB1%'
 ```
 
+
 [1193. Monthly Transactions I](https://leetcode.com/problems/monthly-transactions-i/description/)
 
 ```sql
+
+-- Execution Performance
+--     FILTER clause (Query 2) is generally more concise and potentially more optimized internally.
+--     CASE WHEN (Query 1) is very common, but can be slightly more verbose.
+--     In very large datasets, the performance difference is usually negligible,
+--     but FILTER might have a tiny edge in clarity and parsing efficiency.
+
 select 
     to_char(trans_date, 'YYYY-MM') as month,
     country,
@@ -134,8 +39,62 @@ select
     sum(amount) as trans_total_amount,
     sum(case when state ='approved' then amount else 0 end) as approved_total_amount
 from transactions
-group by month, country 
+group by month, country
+
+
+SELECT TO_CHAR(trans_date, 'YYYY-MM') AS month,
+            country,
+            COUNT(*) AS trans_count, 
+            COUNT(state) FILTER (WHERE state = 'approved') AS approved_count, 
+            SUM(amount) AS trans_total_amount,
+            COALESCE(SUM(amount) FILTER (WHERE state = 'approved'), 0) AS approved_total_amount
+FROM Transactions
+GROUP BY "month", country;
+
+/*
+Snowflake CTEs (Common Table Expressions) can increase cost if misused — but in some cases (like this one), they can actually help performance or readability without impacting cost much.
+
+This CTE is good because:
+    - Used only once – Snowflake will likely inline it during execution.
+    - Avoids recomputing TO_CHAR(trans_date, 'YYYY-MM') in both SELECT and GROUP BY — this saves CPU cycles.
+    - Improves readability — without adding real cost in this case.
+
+When CTEs Can Increase Cost:
+    - Snowflake does not cache CTEs, so they will re-run if used multiple times in the same query
+    - 
+    WITH cte AS (SELECT ... FROM big_table)
+    SELECT * FROM cte WHERE ...;
+    SELECT COUNT(*) FROM cte;
+This would scan big_table twice — doubling cost. Avoid this unless you materialize it as a temp table or view.
+
+Pro Optimization Tip:
+    If you're worried about CTE cost:
+        - Replace with a subquery in FROM clause: Same benefits, same plan.
+        - Or use a TEMP TABLE or MATERIALIZED VIEW if reused many times.
+
+        
+*/
+
+WITH prepped AS (
+    SELECT 
+        TO_CHAR(trans_date, 'YYYY-MM') AS month,
+        country,
+        state,
+        amount
+    FROM transactions
+)
+SELECT 
+    month,
+    country,
+    COUNT(*) AS trans_count,
+    COUNT(*) FILTER (WHERE state = 'approved') AS approved_count,
+    SUM(amount) AS trans_total_amount,
+    COALESCE(SUM(amount) FILTER (WHERE state = 'approved'), 0) AS approved_total_amount
+FROM prepped
+GROUP BY month, country;
+
 ```
+
 
 [196. Delete Duplicate Emails](https://leetcode.com/problems/delete-duplicate-emails/description/)
 ```sql
@@ -659,5 +618,129 @@ from
     Activity
 where activity_date between date('2019-06-28') and date('2019-07-27')
 group by activity_date 
+
+```
+
+[1731. The Number of Employees Which Report to Each Employee](https://leetcode.com/problems/the-number-of-employees-which-report-to-each-employee/description/)
+
+```sql
+
+-- most efficient in terms of logical clarity
+select
+    m.employee_id,
+    m.name,
+    count(e.employee_id) as reports_count,
+    round(avg(e.age)) as average_age
+from
+    Employees m
+join Employees e
+    on m.employee_id=e.reports_to
+group by
+    m.employee_id,
+    m.name
+order by
+    m.employee_id
+
+select
+    m.employee_id,
+    m.name,
+    count(e.reports_to) as reports_count,
+    round(avg(e.age)) as average_age
+from Employees m
+join Employees e
+on m.employee_id = e.reports_to
+group by m.employee_id, m.name
+order by m.employee_id
+
+select
+    e.reports_to as employee_id,
+    m.name,
+    count(e.employee_id) as reports_count,
+    round(avg(e.age)) as average_age
+from Employees e
+join Employees m on m.employee_id = e.reports_to
+where e.reports_to <> 0
+group by e.reports_to, m.name
+order by e.reports_to
+
+select f.employee_id, f.name, count(1) as reports_count, ROUND(AVG(e.age), 0) as average_age
+from Employees e
+JOIN Employees f
+ON e.reports_to = f.employee_id
+group by f.employee_id, f.name
+order by f.employee_id
+
+```
+
+
+[1789. Primary Department for Each Employee](https://leetcode.com/problems/primary-department-for-each-employee/)
+
+```sql
+
+select
+    employee_id,
+    department_id
+from
+    Employee
+where employee_id in (
+    select
+        employee_id
+    from
+        Employee
+    group by employee_id
+    having count(employee_id)=1
+    )
+    or primary_flag = 'Y'
+
+select
+    employee_id,
+    department_id
+from
+    Employee
+where employee_id in (
+    select employee_id
+    from Employee
+    group by employee_id
+    having count(employee_id)=1
+) or primary_flag='Y'
+
+
+select 
+    employee_id,
+    department_id
+from Employee
+where primary_flag = 'Y' or employee_id in (
+    select
+        employee_id
+    from
+        Employee
+    group by employee_id
+    having count(employee_id) = 1
+)
+
+with ids as (select e.employee_id
+from Employee e
+group by e.employee_id
+having count(e.employee_id)=1
+)
+select i.employee_id, e.department_id
+from ids i
+left join Employee e on i.employee_id=e.employee_id
+union all
+select employee_id, department_id
+from Employee
+where primary_flag='Y'
+
+```
+
+[610. Triangle Judgement](https://leetcode.com/problems/triangle-judgement/description/)
+
+```sql
+
+select x, y, z, 
+case
+    when    
+end as triangle
+from Triangle
 
 ```
