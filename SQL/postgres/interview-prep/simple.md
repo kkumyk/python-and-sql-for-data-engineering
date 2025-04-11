@@ -1,184 +1,9 @@
 
-[1193. Monthly Transactions I](https://leetcode.com/problems/monthly-transactions-i/description/)
-
-```sql
-
--- Execution Performance
---     FILTER clause (Query 2) is generally more concise and potentially more optimized internally.
---     CASE WHEN (Query 1) is very common, but can be slightly more verbose.
---     In very large datasets, the performance difference is usually negligible,
---     but FILTER might have a tiny edge in clarity and parsing efficiency.
-
-select
-    to_char(trans_date, 'YYYY-MM') as month,
-    country,
-    count(*) as trans_count,
-    count(*) filter ( where state='approved') as approved_count,
-    sum(amount) as trans_total_amount,
-    coalesce(sum(amount) filter ( where state='approved'), 0) as approved_total_amount
-from
-    Transactions
-group by month, country
-
-
-select 
-    to_char(trans_date, 'YYYY-MM') as month,
-    country,
-    count(*) as trans_count,
-    sum(case when state='approved' then 1 else 0 end) as approved_count,
-    sum(amount) as trans_total_amount,
-    sum(case when state ='approved' then amount else 0 end) as approved_total_amount
-from transactions
-group by month, country
-
-/*
-Snowflake CTEs (Common Table Expressions) can increase cost if misused — but in some cases (like this one), they can actually help performance or readability without impacting cost much.
-
-This CTE is good because:
-    - Used only once – Snowflake will likely inline it during execution.
-    - Avoids recomputing TO_CHAR(trans_date, 'YYYY-MM') in both SELECT and GROUP BY — this saves CPU cycles.
-    - Improves readability — without adding real cost in this case.
-
-When CTEs Can Increase Cost:
-    - Snowflake does not cache CTEs, so they will re-run if used multiple times in the same query
-    - 
-    WITH cte AS (SELECT ... FROM big_table)
-    SELECT * FROM cte WHERE ...;
-    SELECT COUNT(*) FROM cte;
-This would scan big_table twice — doubling cost. Avoid this unless you materialize it as a temp table or view.
-
-Pro Optimization Tip:
-    If you're worried about CTE cost:
-        - Replace with a subquery in FROM clause: Same benefits, same plan.
-        - Or use a TEMP TABLE or MATERIALIZED VIEW if reused many times.  
-*/
-
-WITH prepped AS (
-    SELECT 
-        TO_CHAR(trans_date, 'YYYY-MM') AS month,
-        country,
-        state,
-        amount
-    FROM transactions
-)
-SELECT 
-    month,
-    country,
-    COUNT(*) AS trans_count,
-    COUNT(*) FILTER (WHERE state = 'approved') AS approved_count,
-    SUM(amount) AS trans_total_amount,
-    COALESCE(SUM(amount) FILTER (WHERE state = 'approved'), 0) AS approved_total_amount
-FROM prepped
-GROUP BY month, country;
-
-```
-
-
-[196. Delete Duplicate Emails](https://leetcode.com/problems/delete-duplicate-emails/description/)
-```sql
-delete from person
-where id not in (
-    select min(id)
-    from person
-    group by email)
-
-
-with min_ids as (
-    select min(id) as keep_id from person group by email
-)
-delete from person
-where id not in (select keep_id from min_ids)
-
-
--- Snowflake-Specific Considerations
---  No DELETE with JOIN: Snowflake does not support DELETE with JOIN like in SQL Server or MySQL.
---  CTEs are materialized efficiently in Snowflake. So using a CTE isn't a bad idea.
---  NOT IN with NULLs can be problematic just like in other DBs, but NOT EXISTS is generally better.
---  MERGE or QUALIFY are often more performant in Snowflake for deduplication.
-
--- rank rows by email and keep only the first on eper email
-
-delete from person
-where id not in (
-    select id
-    from (
-        select
-            id,
-            row_number() over (partition by email order by id) as rn
-        from
-            person
-    )
-    where rn = 1
-)
-
-/*
-- ROW_NUMBER() assigns a rank to each row per email, ordering by id.
-- You delete anything that is not the first row (i.e., not rn = 1).
-- Uses window function optimization in Snowflake.
-- Snowflake executes this very efficiently thanks to its MPP (massively parallel processing) engine.
-*/
-
-```
-
-[1484. Group Sold Products By The Date](https://leetcode.com/problems/group-sold-products-by-the-date/description/)
-
-```sql
-select
-    sell_date,
-    count(distinct product) as num_sold,
-    string_agg(distinct product, ',' order by product) as products
-from activities
-group by sell_date
-order by sell_date
-
-
-select
-    sell_date,
-    count(product) as num_sold,
-    string_agg(product, ',' order by product) as products
-from (
-    select distinct sell_date, product from activities
-)
-group by sell_date
-order by sell_date
-
-
-/*
-Most Efficient Version for Snowflake (Recommended)
-
-If the dataset is large, go one step further with a temporary table or CTE to materialize the deduplicated data first — this helps Snowflake optimize better, especially when working with very large or frequently queried datasets.
-*/
-
-
-WITH distinct_activities AS (
-    SELECT DISTINCT sell_date, product
-    FROM activities
-)
-SELECT
-    sell_date,
-    COUNT(*) AS num_sold,
-    STRING_AGG(product, ',' ORDER BY product) AS products
-FROM distinct_activities
-GROUP BY sell_date
-ORDER BY sell_date;
-
-/*
-Why this is best:
-- The DISTINCT is applied just once and efficiently.
-- COUNT(*) is cheaper than COUNT(DISTINCT ...) now, because you've already deduplicated.
-- Snowflake can parallelize the CTE nicely.
-*/
-```
-
-
-
-
-
-
-
 [1174. Immediate Food Delivery II](https://leetcode.com/problems/immediate-food-delivery-ii/description/)
 
 ```sql
+
+
 select round(avg(case when order_date = customer_pref_delivery_date then 1
                 else 0 end) * 100, 2) as immediate_percentage
 from delivery
@@ -200,7 +25,12 @@ where order_date = (
     from delivery d2
     where d.customer_id=d2.customer_id
 )
+
+
 ```
+
+
+
 
 [550. Game Play Analysis IV](https://leetcode.com/problems/game-play-analysis-iv/description/)
 
@@ -248,10 +78,12 @@ SELECT ROUND(active_user::numeric / total_user, 2) AS fraction
 FROM active_consecutive, total_players;
 
 
+
 [595. Big Countries](https://leetcode.com/problems/big-countries/)
 ```sql
 select name, population, area from World where area>=3000000 or population>=25000000
 ```
+
 
 [1661. Average Time of Process per Machine](https://leetcode.com/problems/average-time-of-process-per-machine/)
 ```sql
@@ -806,4 +638,185 @@ order by user_id
 select patient_id, patient_name, conditions
 from patients
 where conditions like 'DIAB1%' or conditions like '% DIAB1%'
+```
+
+[1193. Monthly Transactions I](https://leetcode.com/problems/monthly-transactions-i/description/)
+
+```sql
+
+-- Execution Performance
+--     FILTER clause is generally more concise and potentially more optimized internally.
+--     CASE WHEN (Query 1) is very common, but can be slightly more verbose.
+--     In very large datasets, the performance difference is usually negligible,
+--     but FILTER might have a tiny edge in clarity and parsing efficiency.
+
+select
+    to_char(trans_date, 'YYYY-MM') as month,
+    country,
+    count(*) as trans_count,
+    count(*) filter ( where state='approved') as approved_count,
+    sum(amount) as trans_total_amount,
+    coalesce(sum(amount) filter ( where state='approved'), 0) as approved_total_amount
+from
+    Transactions
+group by month, country
+
+
+
+select 
+    to_char(trans_date, 'YYYY-MM') as month,
+    country,
+    count(*) as trans_count,
+    sum(case when state='approved' then 1 else 0 end) as approved_count,
+    sum(amount) as trans_total_amount,
+    sum(case when state ='approved' then amount else 0 end) as approved_total_amount
+from transactions
+group by month, country
+
+/*
+Snowflake CTEs (Common Table Expressions) can increase cost if misused — 
+but in some cases (like this one), they can actually help performance or readability without impacting cost much.
+
+This CTE is good because:
+    - Used only once – Snowflake will likely inline it during execution.
+    - Avoids recomputing TO_CHAR(trans_date, 'YYYY-MM') in both SELECT and GROUP BY — this saves CPU cycles.
+    - Improves readability — without adding real cost in this case.
+
+When CTEs Can Increase Cost:
+    - Snowflake does not cache CTEs, so they will re-run if used multiple times in the same query
+    - 
+    WITH cte AS (SELECT ... FROM big_table)
+    SELECT * FROM cte WHERE ...;
+    SELECT COUNT(*) FROM cte;
+This would scan big_table twice — doubling cost. Avoid this unless you materialize it as a temp table or view.
+
+Pro Optimization Tip:
+    If you're worried about CTE cost:
+        - Replace with a subquery in FROM clause: Same benefits, same plan.
+        - Or use a TEMP TABLE or MATERIALIZED VIEW if reused many times.  
+*/
+
+WITH prepped AS (
+    SELECT 
+        TO_CHAR(trans_date, 'YYYY-MM') AS month,
+        country,
+        state,
+        amount
+    FROM transactions
+)
+SELECT 
+    month,
+    country,
+    COUNT(*) AS trans_count,
+    COUNT(*) FILTER (WHERE state = 'approved') AS approved_count,
+    SUM(amount) AS trans_total_amount,
+    COALESCE(SUM(amount) FILTER (WHERE state = 'approved'), 0) AS approved_total_amount
+FROM prepped
+GROUP BY month, country;
+
+```
+
+
+[196. Delete Duplicate Emails](https://leetcode.com/problems/delete-duplicate-emails/description/)
+
+```sql
+
+delete from person
+where id not in (
+    select min(id)
+    from person
+    group by email)
+
+
+with min_ids as (
+    select min(id) as keep_id from person group by email
+)
+delete from person
+where id not in (select keep_id from min_ids)
+
+
+-- Snowflake-Specific Considerations:
+--  No DELETE with JOIN: Snowflake does not support DELETE with JOIN like in SQL Server or MySQL.
+--  CTEs are materialized efficiently in Snowflake. So using a CTE isn't a bad idea.
+--  NOT IN with NULLs can be problematic just like in other DBs, but NOT EXISTS is generally better.
+--  MERGE or QUALIFY are often more performant in Snowflake for deduplication.
+
+-- rank rows by email and keep only the first on eper email
+
+delete from person
+where id not in (
+    select id
+    from (
+        select
+            id,
+            row_number() over (partition by email order by id) as rn
+        from
+            person
+    )
+    where rn = 1
+)
+
+/*
+- ROW_NUMBER() assigns a rank to each row per email, ordering by id.
+- You delete anything that is not the first row (i.e., not rn = 1).
+- Uses window function optimization in Snowflake.
+- Snowflake executes this very efficiently thanks to its MPP (massively parallel processing) engine.
+*/
+
+```
+
+
+[1484. Group Sold Products By The Date](https://leetcode.com/problems/group-sold-products-by-the-date/description/)
+
+```sql
+select
+    sell_date,
+    count(distinct product) as num_sold,
+    string_agg(distinct product, ',' order by product) as products
+from activities
+group by sell_date
+order by sell_date
+
+
+select
+    sell_date,
+    count(product) as num_sold,
+    string_agg(product, ',' order by product) as products
+from (
+    select distinct sell_date, product from activities
+)
+group by sell_date
+order by sell_date
+
+
+select
+    sell_date,
+    count(distinct product) as num_sold,
+    string_agg(distinct product, ',' order by product) as products
+from Activities
+group by sell_date
+
+/*
+Most Efficient Version for Snowflake (Recommended)
+
+If the dataset is large, go one step further with a temporary table or CTE to materialize the deduplicated data first — this helps Snowflake optimize better, especially when working with very large or frequently queried datasets.
+*/
+
+with distinct_activities as (
+    select distinct sell_date, product
+    from activities
+)
+select
+    sell_date,
+    count(*) as num_sold,
+    string_agg(product, ',' order by product) as products
+from distinct_activities
+group by sell_date
+
+/*
+Why this is best:
+- The DISTINCT is applied just once and efficiently.
+- COUNT(*) is cheaper than COUNT(DISTINCT ...) now, because you've already deduplicated.
+- Snowflake can parallelize the CTE nicely.
+*/
 ```
