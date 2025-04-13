@@ -2,8 +2,22 @@
 [1174. Immediate Food Delivery II](https://leetcode.com/problems/immediate-food-delivery-ii/description/)
 
 ```sql
+/*
+- immediate order - delivery date is the same as the order date
+- what is the percentage of immediate orders in the first orders
+- round to two decimal places
 
+- find the total nr of first orders
+- find the nr of immediate orders
+- use filter to filter out orders that are not first orders
+*/
 
+/* 
+IN with a tuple and GROUP BY
+Snowflake is great at optimizing set-based operations like IN (...) with GROUP BY.
+Even though it doesn't support tuple comparison indexes per se, it can precompute the subquery result efficiently.
+
+*/
 select round(avg(case when order_date = customer_pref_delivery_date then 1
                 else 0 end) * 100, 2) as immediate_percentage
 from delivery
@@ -13,6 +27,24 @@ where (customer_id, order_date) in (
                     from delivery
                     group by customer_id
 )
+
+/*
+CTE + JOIN
+*/
+with first_orders as (
+  select customer_id, min(order_date) as first_order_date
+  from delivery
+  group by customer_id
+)
+selec round(avg(case 
+    when d.order_date = d.customer_pref_delivery_date then 1
+    else 0 
+end) * 100, 2) as immediate_percentage
+from delivery d
+join first_orders f
+  on d.customer_id = f.customer_id and d.order_date = f.first_order_date;
+
+
 
 
 select round(avg(case
@@ -28,8 +60,6 @@ where order_date = (
 
 
 ```
-
-
 
 
 [550. Game Play Analysis IV](https://leetcode.com/problems/game-play-analysis-iv/description/)
