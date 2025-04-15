@@ -1,7 +1,6 @@
 # SQLZoo Tutorial
 
-## [SELECT within SELECT](https://www.sqlzoo.net/wiki/SELECT_within_SELECT_Tutorial)
-
+## [SELECT within SELECT](https://www.sqlzoo.net/wiki/SELECT_within_SELECT_Tutorial): Using nested SELECT
 ```sql
 /*
 List each country name where the population is larger than that of 'Russia'.
@@ -72,4 +71,92 @@ select
 from world
 where continent='Europe'
 
+select name
+from world
+where continent!='Europe' and gdp > (select gdp from world where continent='Europe')
+
+```
+
+```sql
+
+/*
+Which countries have a GDP greater than every country in Europe?
+[Give the name only.] (Some countries may have NULL gdp values) 
+*/
+
+select name
+from world
+where gdp > (
+    select
+        max(gdp) from world where continent = 'Europe')
+
+```
+
+
+```sql
+
+/*
+Find the largest country (by area) in each continent, show the continent, the name and the area: The above example is known as a correlated or synchronized sub-query. 
+*/
+
+select continent, name, area from world x
+where area >= all
+    (select area from world y
+        where y.continent=x.continent
+    )
+```
+
+```sql
+
+/*
+List each continent and the country that comes first alphabetically within that continent using a correlated subquery
+*/
+
+select continent, name
+from world x
+where name = (
+    select min(name)
+    from world y
+    where y.continent=x.continent
+)
+        
+```
+
+
+```sql
+
+/*
+Find the continents where all countries have a population <= 25000000.
+Then find the names of the countries associated with these continents.
+Show name, continent and population. 
+*/
+
+with continent_select as (
+    select continent
+    from world
+    group by continent
+    having max(population) <= 25000000
+)
+select w.name, w.continent, w.population
+from world w
+join continent_select on w.continent=continent_select.continent
+        
+```
+
+
+
+
+
+
+
+
+
+```sql
+
+/*
+
+*/
+
+
+        
 ```
