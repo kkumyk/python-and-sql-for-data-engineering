@@ -96,7 +96,24 @@ where gdp > (
 ```sql
 
 /*
-Find the largest country (by area) in each continent, show the continent, the name and the area: The above example is known as a correlated or synchronized sub-query. 
+
+Largest in each continent
+Find the largest country (by area) in each continent, show the continent, the name and the area.
+
+Correlated or Synchronized sub-query
+
+A correlated subquery works like a nested loop: the subquery only has access to
+rows related to a single record at a time in the outer query.
+The technique relies on table aliases to identify two different uses of the same table,
+one in the outer query and the other in the subquery.
+One way to interpret the line in the WHERE clause that references the two table is “
+… where the correlated values are the same”.
+
+In the example provided, you would say “select the country details from world where the population
+is greater than or equal to the population of all countries where the continent is the same”.
+
+Find the largest country (by area) in each continent, show the continent,
+the name and the area: The above example is known as a correlated or synchronized sub-query. 
 */
 
 select continent, name, area from world x
@@ -104,6 +121,25 @@ where area >= all
     (select area from world y
         where y.continent=x.continent
     )
+
+
+/*
+Query that does not use a correlated sub-query and more cost-efficient in Snowflake.
+Uses a single scan + aggregation (MAX with GROUP BY).
+Very efficient in Snowflake, because:
+    Grouping and aggregation are optimized.
+    Subquery is independent, can run in parallel.
+
+*/
+
+select continent, name, area
+from world
+where (continent, area) in (
+    select continent, max(area)
+    from world
+    group by continent
+)
+
 ```
 
 ```sql
@@ -119,7 +155,15 @@ where name = (
     from world y
     where y.continent=x.continent
 )
-        
+
+select x.continent, x.name
+from world x
+where name = (
+    select min(name)
+    from world
+    where continent = x.continent
+)
+
 ```
 
 
@@ -142,6 +186,89 @@ from world w
 join continent_select on w.continent=continent_select.continent
         
 ```
+
+
+```sql
+
+/*
+Some countries have populations more than three times that of all of their neighbours (in the same continent).
+Give the countries and continents.
+
+Give me the countries where there is no neighbor in the same continent
+that has at least one-third of their population.
+*/
+
+select x.name, x.continent
+from world x
+where not exists (
+
+    select y.name
+    from world y
+    where y.continent=x.continent
+    and y.name!=x.name
+    and x.population <= 3*y.population
+
+)
+
+```
+
+## [Nested SELECT Quiz](https://www.sqlzoo.net/wiki/Nested_SELECT_Quiz)
+
+
+```sql
+
+/*
+2. Select the code that shows the countries belonging to regions with all populations over 50000:
+*/
+
+select name, region, population
+from bbc x
+where 50000 < ALL (
+  select population
+  from bbc y
+  where x.region = y.region AND y.population > 0
+);
+
+        
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```sql
+
+/*
+
+*/
+
+
+
+
+        
+```
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
