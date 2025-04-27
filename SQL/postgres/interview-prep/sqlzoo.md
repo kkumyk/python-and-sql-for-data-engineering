@@ -212,11 +212,24 @@ where not exists (
 
 ```
 
+
 ## [Nested SELECT Quiz](https://www.sqlzoo.net/wiki/Nested_SELECT_Quiz)
 
 
 ```sql
 
+/*
+1. Select the code that shows the name, region and population of the smallest country in each region 
+*/
+
+
+SELECT
+    region, name, population
+    FROM bbc x WHERE population <= ALL (SELECT population FROM bbc y WHERE y.region=x.region AND population>0)
+
+```
+
+```sql
 /*
 2. Select the code that shows the countries belonging to regions with all populations over 50000:
 */
@@ -228,9 +241,122 @@ where 50000 < ALL (
   from bbc y
   where x.region = y.region AND y.population > 0
 );
+ 
+```
+
+```sql
+
+/*
+Select the result that would be obtained from the following code: 
+
+SELECT name FROM bbc
+ WHERE population >
+       (SELECT population
+          FROM bbc
+         WHERE name='United Kingdom')
+   AND region IN
+       (SELECT region
+          FROM bbc
+         WHERE name = 'United Kingdom')
+
+France
+Germany
+Russia
+Turkey
+*/
+        
+```
+
+```sql
+
+/*
+Select the code that would show the countries with a greater GDP than any country in Africa
+(some countries may have NULL gdp values). 
+*/
+
+SELECT name FROM bbc
+ WHERE gdp > (SELECT MAX(gdp) FROM bbc WHERE region = 'Africa')
+        
+```
+
+```sql
+
+/*
+Select the code that shows the countries with population smaller than Russia but bigger than Denmark 
+*/
+
+SELECT name FROM bbc
+ WHERE population < (SELECT population FROM bbc WHERE name='Russia')
+   AND population > (SELECT population FROM bbc WHERE name='Denmark')
+        
+```
+
+
+```sql
+
+/*
+Select the result that would be obtained from the following code
+
+Bangladesh
+India
+Pakistan
+*/
+
+SELECT name FROM bbc
+ WHERE population > ALL
+       (SELECT MAX(population)
+          FROM bbc
+         WHERE region = 'Europe')
+   AND region = 'South Asia'
+
+```
+
+```sql
+
+/*
+
+*/
+
+
+
 
         
 ```
+
+
+
+
+
+
+
+
+
+
+
+## [The JOIN operation](https://www.sqlzoo.net/wiki/The_JOIN_operation)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
