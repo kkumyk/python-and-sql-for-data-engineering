@@ -60,3 +60,26 @@ GROUP BY
 -- Runtime: 176 ms
 ```
 
+
+[1045. Customers Who Bought All Products](https://leetcode.com/problems/customers-who-bought-all-products/description/)
+
+```sql
+select 
+c.customer_id as customer_id
+from customer c
+group by c.customer_id
+having count(distinct c.product_key) = (select count(*) from product)
+
+```
+
+
+[1070. Product Sales Analysis III](https://leetcode.com/problems/product-sales-analysis-iii/description/)
+```sql
+with first_year as (select product_id, min(year) as first_year
+from sales
+group by product_id )
+select s.product_id, s.year as first_year, s.quantity, s.price
+from sales s
+join first_year f
+on s.product_id = f.product_id and f.first_year = s.year
+```
