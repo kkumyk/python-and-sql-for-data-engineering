@@ -83,3 +83,29 @@ from sales s
 join first_year f
 on s.product_id = f.product_id and f.first_year = s.year
 ```
+
+
+[180. Consecutive Numbers](https://leetcode.com/problems/consecutive-numbers/description/)
+
+```sql
+select distinct l1.num as ConsecutiveNums
+from logs l1
+join logs l2 on l2.id=l1.id+1 and l2.num=l1.num
+join logs l3 on l3.id=l2.id+1 and l3.num=l2.num;
+```
+
+[1204. Last Person to Fit in the Bus](https://leetcode.com/problems/last-person-to-fit-in-the-bus/description/)
+
+```sql
+select person_name
+from (
+    select
+        person_id,
+        person_name,
+        sum(weight) over (order by turn) as cum_sum
+    from queue
+    order by turn desc
+)
+where cum_sum <= 1000
+limit 1;
+```
