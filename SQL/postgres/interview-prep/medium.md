@@ -92,20 +92,46 @@ select distinct l1.num as ConsecutiveNums
 from logs l1
 join logs l2 on l2.id=l1.id+1 and l2.num=l1.num
 join logs l3 on l3.id=l2.id+1 and l3.num=l2.num;
+
+/*
+LAG(), LEAD() – window functions, access values from previous or next rows.
+*/
+
+with numbered_logs as (
+    select
+        num,
+        lag(num) over (order by id) as prev_num,
+        lead(num) over (order by id) as next_num
+    from logs
+)
+select distinct num as ConsecutiveNums
+from numbered_logs
+where num = prev_num and num = next_num
 ```
 
 [1204. Last Person to Fit in the Bus](https://leetcode.com/problems/last-person-to-fit-in-the-bus/description/)
 
 ```sql
+
+/*
+
+sum(...) over(...) construct is a window function
+sum(...) will collapce rows into a single result
+a window function does not collapce rows, returns cumulative result
+sum(weight) is the function being applied
+over(order by turn) defines the window - the order by which the rows are processed
+cum_sum - the running cumulative sum of weights ordered by turn
+*/
+
 select person_name
 from (
     select
-        person_id,
         person_name,
         sum(weight) over (order by turn) as cum_sum
     from queue
-    order by turn desc
 )
 where cum_sum <= 1000
-limit 1;
+order by cum_sum desc
+limit 
 ```
+
