@@ -1,3 +1,208 @@
+# PostgreSQl - Tasks By Topic
+
+## JOINs
+
+### INNER JOIN
+
+- "give me the rows that exist in both tables"
+- returns only the rows where it is a match in both tables based on a conditions - a common key
+
+[570. Managers with at Least 5 Direct Reports](https://leetcode.com/problems/managers-with-at-least-5-direct-reports/description/)
+
+```sql
+/*
+Write a solution to find managers with at least five direct reports:
+- each employee has a managerId referencing another employee's id >>> use self-join
+- alias e for the employee and m for the manager - this way each row will contain the manager name and the name of manager's report
+- to count the number of employees per manager - group by both - m.name and e.managerId; group by both fields because m.name might not be unique - two people might share the same name > so e.managerId ensures accurate grouping on the manager's unique ID.
+- use HAVING to filter aggregates after grouping:
+- find those groups where the manager has 5 or more direct reports
+- HAVING is used to filter aggregate functions like count()
+*/
+
+select
+    m.name
+from
+    Employee e
+join Employee m
+on m.id = e.managerId
+group by m.name, e.managerId
+having count(e.managerId) >= 5
+```
+
+
+[1070. Product Sales Analysis III](https://leetcode.com/problems/product-sales-analysis-iii/description/)
+
+```sql
+/*
+Write a solution to select the product id, year, quantity, and price for the first year of every product sold. If any product is bought multiple times in its first year, return all sales separately.
+- start by building CTE to isolate the earliest year each product appearst in the Sales table
+- the CTE here keeps the logic modular and makes the main query easier to read
+- use min() to find the earliest year per product
+- group by product_id ensures this is done per product
+- using CTE instead of a subquery makes the query cleaner and better for debugging and reuse
+- next, join the original data with the first_year data from the CTE on both -  product Id and year - this ensures I pull only the rows where the sale happened in that product's first year - not just any year.
+*/
+
+with first_year as (
+    select
+        product_id,
+        min(year) as first_year
+from sales
+group by product_id)
+select
+    s.product_id,
+    s.year as first_year,
+    s.quantity,
+    s.price
+from sales s
+join first_year f
+on s.product_id = f.product_id
+and s.year = f.first_year
+```
+
+
+[180. Consecutive Numbers](https://leetcode.com/problems/consecutive-numbers/description/)
+
+```sql
+/*
+- Find all numbers that appear at least three times consecutively in the logs table.
+- to find three consecutive rows with the same number, self-join the logs table twice
+- first, match a row l1 with the next one - l2 by checking l2.id = l1.id+1 and ensure they have the same value: l2.num =  l1.num - this ensures that we are looking at three rows with the same values num and increasing id values
+- select l1.num because that represents the first number in the 3-row sequence
+- use DISTINCT to return each qualifying nubmer only once - even if that pattern appears multiple times
+- this query identifies numers that appear at least three consecutive rows; use two self-joins to align a row with the next two rows using id + 1 and id + 2, and ensure all three have the same value num; select only the first number in the sequence and use DISTINCT to remove duplicates; this pattern is useful in detecting trends, anomalies, or behavioral patterns in ordered datasets.
+*/
+
+select
+    distinct l1.num as ConsecutiveNums
+from Logs l1
+join Logs l2 on l2.id = l1.id + 1 and l1.num = l2.num
+join Logs l3 on l3.id = l2.id + 1 and l2.num = l3.num
+```
+
+
+
+
+
+
+
+### LEFT JOIN
+
+[1934. Confirmation Rate](https://leetcode.com/problems/confirmation-rate/description/)
+
+```sql
+SELECT s.user_id, round(avg(CASE WHEN action = 'confirmed' THEN 1 ELSE 0 END), 2) AS confirmation_rate
+FROM Signups s
+LEFT JOIN Confirmations c
+ON s.user_id=c.user_id
+GROUP BY s.user_id
+```
+
+[1251. Average Selling Price](https://leetcode.com/problems/average-selling-price/description/)
+```sql
+SELECT p.product_id, COALESCE(ROUND(SUM(u.units*p.price)/SUM(u.units)::decimal, 2), 0) as average_price
+FROM Prices p
+LEFT JOIN UnitsSold u
+ON u.product_id = p.product_id AND u.purchase_date BETWEEN p.start_date AND p.end_date
+GROUP BY p.product_id
+
+-- Runtime: 182 ms - slightly slower due to how it handles null values and data type conversions
+
+----------------------------------------------
+-- SQL queries execute in the following order:
+
+--     FROM & JOIN: Combines Prices and UnitsSold tables based on product_id and purchase_date.
+--     WHERE (ON condition in LEFT JOIN): Filters only valid price periods for each sale.
+--     GROUP BY: Groups by product_id to aggregate values.
+--     SELECT: Computes the average_price calculation.
+--     CASE & COALESCE: Handles cases where a product has no sales.
+--     ROUND(): Ensures output has 2 decimal places.
+
+    SELECT 
+        p.product_id,
+        CASE
+            WHEN SUM(u.units) is null
+            THEN 0
+            ELSE
+                ROUND(SUM(u.units * p.price) / SUM(u.units)::numeric, 2)
+        END
+        AS average_price
+    FROM 
+        Prices p
+LEFT JOIN 
+    UnitsSold u
+ON 
+    u.product_id = p.product_id 
+    AND u.purchase_date BETWEEN p.start_date AND p.end_date
+GROUP BY 
+    p.product_id;
+
+-- Runtime: 176 ms
+```
+
+
+[1045. Customers Who Bought All Products](https://leetcode.com/problems/customers-who-bought-all-products/description/)
+
+```sql
+select 
+c.customer_id as customer_id
+from customer c
+group by c.customer_id
+having count(distinct c.product_key) = (select count(*) from product)
+
+```
+
+
+
+
+
+[180. Consecutive Numbers](https://leetcode.com/problems/consecutive-numbers/description/)
+/*
+LAG(), LEAD() – window functions, access values from previous or next rows.
+*/
+
+with numbered_logs as (
+    select
+        num,
+        lag(num) over (order by id) as prev_num,
+        lead(num) over (order by id) as next_num
+    from logs
+)
+select distinct num as ConsecutiveNums
+from numbered_logs
+where num = prev_num and num = next_num
+```
+
+[1204. Last Person to Fit in the Bus](https://leetcode.com/problems/last-person-to-fit-in-the-bus/description/)
+
+```sql
+
+/*
+
+sum(...) over(...) construct is a window function
+sum(...) will collapce rows into a single result
+a window function does not collapce rows, returns cumulative result
+sum(weight) is the function being applied
+over(order by turn) defines the window - the order by which the rows are processed
+cum_sum - the running cumulative sum of weights ordered by turn
+*/
+
+select person_name
+from (
+    select
+        person_name,
+        sum(weight) over (order by turn) as cum_sum
+    from queue
+)
+where cum_sum <= 1000
+order by cum_sum desc
+limit 
+```
+
+https://leetcode.com/problems/count-salary-categories/description/?envType=study-plan-v2&envId=top-sql-50
+
+
 
 [1174. Immediate Food Delivery II](https://leetcode.com/problems/immediate-food-delivery-ii/description/)
 
@@ -849,4 +1054,521 @@ Why this is best:
 - COUNT(*) is cheaper than COUNT(DISTINCT ...) now, because you've already deduplicated.
 - Snowflake can parallelize the CTE nicely.
 */
+```
+
+
+
+# SQLZoo Tutorial
+
+## [SELECT within SELECT](https://www.sqlzoo.net/wiki/SELECT_within_SELECT_Tutorial): Using nested SELECT
+```sql
+/*
+List each country name where the population is larger than that of 'Russia'.
+
+This select with select only works if we only use a single value whihin the internal select statement,
+here - population. So, you cannot ask for population and area in the internal select statement.
+You also cannot ask to check for more than one row with the WHERE using LIKE. Only a single row should be returned
+from the subquery. Also, the query will return an error if there is an option that returns zero values.
+Brackets are mandatory in this statement.
+*/
+
+select name from world
+where population >
+(select population from world
+    where name = 'Russia')
+```
+
+```sql
+-- Show the countries in Europe with a per capita GDP greater than 'United Kingdom'.
+
+select name
+from world
+where continent='Europe' and gdp/population > (
+    select gdp/population
+    from world
+    where name='United Kingdom'
+)
+```
+
+```sql
+/*
+List the name and continent of countries in the continents containing either Argentina or Australia.
+Order by name of the country.
+*/
+
+select name, continent
+from world
+where continent in (
+    select continent from world
+    where name in ('Argentina', 'Australia')
+)
+```
+
+```sql
+-- Which country has a population that is more than United Kingdom but less than Germany? Show the name and the population.
+
+select name, population
+from world
+where
+    population > (select population from world where name='United Kingdom') and
+    population < (select population from world where name='Germany') 
+```
+
+
+```sql
+/*
+Percentages of Germany
+Germany (population roughly 80 million) has the largest population of the countries in Europe. Austria (population 8.5 million) has 11% of the population of Germany.
+
+Show the name and the population of each country in Europe. Show the population as a percentage of the population of Germany.
+*/
+
+select
+    name,
+    concat(
+        round(population / (select population from world where name='Germany') * 100),
+    '%' ) as percentage
+from world
+where continent='Europe'
+
+select name
+from world
+where continent!='Europe' and gdp > (select gdp from world where continent='Europe')
+
+```
+
+```sql
+
+/*
+Which countries have a GDP greater than every country in Europe?
+[Give the name only.] (Some countries may have NULL gdp values) 
+*/
+
+select name
+from world
+where gdp > (
+    select
+        max(gdp) from world where continent = 'Europe')
+
+```
+
+
+```sql
+
+/*
+
+Largest in each continent
+Find the largest country (by area) in each continent, show the continent, the name and the area.
+
+Correlated or Synchronized sub-query
+
+A correlated subquery works like a nested loop: the subquery only has access to
+rows related to a single record at a time in the outer query.
+The technique relies on table aliases to identify two different uses of the same table,
+one in the outer query and the other in the subquery.
+One way to interpret the line in the WHERE clause that references the two table is “
+… where the correlated values are the same”.
+
+In the example provided, you would say “select the country details from world where the population
+is greater than or equal to the population of all countries where the continent is the same”.
+
+Find the largest country (by area) in each continent, show the continent,
+the name and the area: The above example is known as a correlated or synchronized sub-query. 
+*/
+
+select continent, name, area from world x
+where area >= all
+    (select area from world y
+        where y.continent=x.continent
+    )
+
+
+/*
+Query that does not use a correlated sub-query and more cost-efficient in Snowflake.
+Uses a single scan + aggregation (MAX with GROUP BY).
+Very efficient in Snowflake, because:
+    Grouping and aggregation are optimized.
+    Subquery is independent, can run in parallel.
+
+*/
+
+select continent, name, area
+from world
+where (continent, area) in (
+    select continent, max(area)
+    from world
+    group by continent
+)
+
+```
+
+```sql
+
+/*
+List each continent and the country that comes first alphabetically within that continent using a correlated subquery
+*/
+
+select continent, name
+from world x
+where name = (
+    select min(name)
+    from world y
+    where y.continent=x.continent
+)
+
+select x.continent, x.name
+from world x
+where name = (
+    select min(name)
+    from world
+    where continent = x.continent
+)
+
+```
+
+
+```sql
+
+/*
+Find the continents where all countries have a population <= 25000000.
+Then find the names of the countries associated with these continents.
+Show name, continent and population. 
+*/
+
+with continent_select as (
+    select continent
+    from world
+    group by continent
+    having max(population) <= 25000000
+)
+select w.name, w.continent, w.population
+from world w
+join continent_select on w.continent=continent_select.continent
+        
+```
+
+
+```sql
+
+/*
+Some countries have populations more than three times that of all of their neighbours (in the same continent).
+Give the countries and continents.
+
+Give me the countries where there is no neighbor in the same continent
+that has at least one-third of their population.
+*/
+
+select x.name, x.continent
+from world x
+where not exists (
+
+    select y.name
+    from world y
+    where y.continent=x.continent
+    and y.name!=x.name
+    and x.population <= 3*y.population
+
+)
+
+```
+
+
+## [Nested SELECT Quiz](https://www.sqlzoo.net/wiki/Nested_SELECT_Quiz)
+
+
+```sql
+
+/*
+1. Select the code that shows the name, region and population of the smallest country in each region 
+*/
+
+
+SELECT
+    region, name, population
+    FROM bbc x WHERE population <= ALL (SELECT population FROM bbc y WHERE y.region=x.region AND population>0)
+
+```
+
+```sql
+/*
+2. Select the code that shows the countries belonging to regions with all populations over 50000:
+*/
+
+select name, region, population
+from bbc x
+where 50000 < ALL (
+  select population
+  from bbc y
+  where x.region = y.region AND y.population > 0
+);
+ 
+```
+
+```sql
+
+/*
+Select the result that would be obtained from the following code: 
+
+SELECT name FROM bbc
+ WHERE population >
+       (SELECT population
+          FROM bbc
+         WHERE name='United Kingdom')
+   AND region IN
+       (SELECT region
+          FROM bbc
+         WHERE name = 'United Kingdom')
+
+France
+Germany
+Russia
+Turkey
+*/
+        
+```
+
+```sql
+
+/*
+Select the code that would show the countries with a greater GDP than any country in Africa
+(some countries may have NULL gdp values). 
+*/
+
+SELECT name FROM bbc
+ WHERE gdp > (SELECT MAX(gdp) FROM bbc WHERE region = 'Africa')
+        
+```
+
+```sql
+
+/*
+Select the code that shows the countries with population smaller than Russia but bigger than Denmark 
+*/
+
+SELECT name FROM bbc
+ WHERE population < (SELECT population FROM bbc WHERE name='Russia')
+   AND population > (SELECT population FROM bbc WHERE name='Denmark')
+        
+```
+
+```sql
+
+/*
+Select the result that would be obtained from the following code
+
+Bangladesh
+India
+Pakistan
+*/
+
+SELECT name FROM bbc
+ WHERE population > ALL
+       (SELECT MAX(population)
+          FROM bbc
+         WHERE region = 'Europe')
+   AND region = 'South Asia'
+
+```
+
+## [Using Null](https://www.sqlzoo.net/wiki/Using_Null)
+
+```sql
+/*
+List the teachers who have NULL for their department. 
+*/
+
+SELECT name
+FROM teacher
+WHERE dept IS NULL;
+```
+
+```sql
+/*
+Note the INNER JOIN misses the teachers with no department and the departments with no teacher. 
+*/
+SELECT teacher.name, dept.name
+ FROM teacher INNER JOIN dept
+           ON (teacher.dept=dept.id)
+```
+
+```sql
+/*
+Use a different JOIN so that all teachers are listed. 
+*/
+
+SELECT teacher.name, dept.name
+ FROM teacher LEFT JOIN dept
+           ON (teacher.dept=dept.id)
+```
+
+```sql
+/*
+Use a different JOIN so that all departments are listed
+*/
+SELECT teacher.name, dept.name
+ FROM teacher RIGHT JOIN dept
+           ON (teacher.dept=dept.id)
+```
+
+```sql
+/*
+Use COALESCE to print the mobile number. Use the number '07986 444 2266' 
+if there is no number given. Show teacher name and mobile number or '07986 444 2266'
+*/
+SELECT name, COALESCE(mobile, '07986 444 2266')
+ FROM teacher   
+```
+
+```sql
+/*
+Use the COALESCE function and a LEFT JOIN to print the teacher name and department name.
+Use the string 'None' where there is no department. 
+*/
+SELECT teacher.name, coalesce(dept.name, 'None')
+ FROM teacher LEFT JOIN dept
+           ON (teacher.dept=dept.id)
+```
+
+```sql
+/*
+Use COUNT to show the number of teachers and the number of mobile phones. 
+*/
+select count(name), count(mobile)
+from teacher   
+```
+
+```sql
+/*
+Use COUNT and GROUP BY dept.name to show each department and the number of staff.
+Use a RIGHT JOIN to ensure that the Engineering department is listed. 
+*/
+SELECT dept.name, count(teacher.name)
+ FROM teacher RIGHT JOIN dept
+           ON (teacher.dept=dept.id)
+group by dept.name  
+```
+
+```sql
+/*
+Use CASE to show the name of each teacher followed by 'Sci' if the teacher is in dept 1 or 2 and 'Art' otherwise. 
+*/
+SELECT name, case when dept in (1,2) then 'Sci' else 'Art' end
+ FROM teacher
+   
+```
+
+```sql
+/*
+Use CASE to show the name of each teacher followed by 'Sci' if the teacher is in dept 1 or 2,
+show 'Art' if the teacher's dept is 3 and 'None' otherwise. 
+*/
+SELECT
+ name,
+ CASE
+    WHEN dept IN (1,2) THEN 'Sci'
+    WHEN dept = 3 THEN 'Art'
+ ELSE 'None' END
+FROM teacher
+
+```
+[Quiz]( https://www.sqlzoo.net/wiki/Using_Null_Quiz)
+
+
+
+
+```sql
+/*
+
+*/
+ 
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```sql
+/*
+
+*/
+    
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+```sql
+
+/*
+
+*/
+
+
+
+
+        
+```
+
+
+
+
+## 1. Understand the distribution of values in the data set
+
+- find the most frequent values for a specific column
+- find the most common product categories
+- this query returns the product categories and their respective frequencies:
+    ```sql
+    select category, count(*) as cnt from orders group by category order by count(*) desc
+    ```
+- also try <code>GROUP BY 1 ORDER BY 2</code>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```sql
+
+/*
+
+*/
+
+
+        
 ```
