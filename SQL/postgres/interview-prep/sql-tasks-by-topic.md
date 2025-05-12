@@ -407,6 +407,44 @@ from numbered_logs
 where num = prev_num and num = next_num
 ```
 
+## UNION and UNION ALL
+
+[1907. Count Salary Categories](https://leetcode.com/problems/count-salary-categories/description/)
+```sql
+with categories as (
+select
+    case
+    when income > 50000 then 'High Salary'
+    when income < 20000 then 'Low Salary' 
+    else 'Average Salary'
+    end
+    as category,
+    account_id
+from Accounts
+),
+all_categories as (
+    select 'High Salary' as category
+    union all
+    select 'Average Salary'
+    union all
+    select 'Low Salary'
+)
+select
+    a.category,
+    coalesce(count(c.category), 0) as accounts_count
+from all_categories a
+left join categories c
+on c.category = a.category
+group by a.category
+order by a.category
+```
+
+WIP
+[626. Exchange Seats](https://leetcode.com/problems/exchange-seats/description/?envType=study-plan-v2&envId=top-sql-50)
+
+
+
+
 [1204. Last Person to Fit in the Bus](https://leetcode.com/problems/last-person-to-fit-in-the-bus/description/)
 
 ```sql
