@@ -82,32 +82,48 @@ join Logs l3 on l3.id = l2.id + 1 and l2.num = l3.num
 ```
 
 
-
-
-
-
-
 ### LEFT JOIN
 
 [1934. Confirmation Rate](https://leetcode.com/problems/confirmation-rate/description/)
 
 ```sql
-SELECT s.user_id, round(avg(CASE WHEN action = 'confirmed' THEN 1 ELSE 0 END), 2) AS confirmation_rate
-FROM Signups s
-LEFT JOIN Confirmations c
-ON s.user_id=c.user_id
-GROUP BY s.user_id
+/*
+- include all records from the left/first table and matching records from the right/second table
+- if there are no matches in the right table, returned value for not found matches will be NULL
+- order matters: the "source of truth" / the primary table should be specified first
+
+confirmation rate of each user:
+- nr of 'confirmed' messages / total number of requested confirmation messages
+
+- calc nr of 'confirmed' messages for each user
+- calc nr of total action messages for each user
+- use left join to join Signups table first as Confirmations table might not contain users that did not request confirmation; this way we are not missing any users
+*/
+
+select
+    s.user_id,
+    round(
+        avg(case when c.action = 'confirmed' then 1 else 0 end), 2) as confirmation_rate 
+from Signups s
+left join Confirmations c
+on s.user_id = c.user_id
+group by s.user_id
+
 ```
+
 
 [1251. Average Selling Price](https://leetcode.com/problems/average-selling-price/description/)
 ```sql
-SELECT p.product_id, COALESCE(ROUND(SUM(u.units*p.price)/SUM(u.units)::decimal, 2), 0) as average_price
-FROM Prices p
-LEFT JOIN UnitsSold u
-ON u.product_id = p.product_id AND u.purchase_date BETWEEN p.start_date AND p.end_date
-GROUP BY p.product_id
+select
+    p.product_id,
+    coalesce(round(
+        sum(u.units*p.price)/sum(u.units)::decimal, 2), 0) as average_price
+from Prices p
+left join UnitsSold u
+on u.product_id = p.product_id and u.purchase_date between p.start_date and p.end_date
+group by p.product_id
 
--- Runtime: 182 ms - slightly slower due to how it handles null values and data type conversions
+-- slightly slower due to how it handles null values and data type conversions
 
 ----------------------------------------------
 -- SQL queries execute in the following order:
@@ -119,27 +135,113 @@ GROUP BY p.product_id
 --     CASE & COALESCE: Handles cases where a product has no sales.
 --     ROUND(): Ensures output has 2 decimal places.
 
-    SELECT 
-        p.product_id,
-        CASE
-            WHEN SUM(u.units) is null
-            THEN 0
-            ELSE
-                ROUND(SUM(u.units * p.price) / SUM(u.units)::numeric, 2)
-        END
-        AS average_price
-    FROM 
-        Prices p
-LEFT JOIN 
-    UnitsSold u
-ON 
-    u.product_id = p.product_id 
-    AND u.purchase_date BETWEEN p.start_date AND p.end_date
-GROUP BY 
-    p.product_id;
+select
+    p.product_id,
+    case
+        when sum(u.units) is null
+        then 0
+        else
+            round(sum(u.units * p.price) / sum(u.units)::numeric, 2)
+        end
+        as average_price
+from prices p
+left join unitssold u
+on u.product_id = p.product_id and u.purchase_date between p.start_date and p.end_date
+group by p.product_id;
 
--- Runtime: 176 ms
 ```
+
+
+
+[1068. Product Sales Analysis I](https://leetcode.com/problems/product-sales-analysis-i/)
+
+```sql
+-- INNER JOIN retrieves only matching rows from both tables.
+select p.product_name, s.year, s.price
+from Product p
+join Sales s
+on p.product_id=s.product_id
+order by s.year 
+
+-- LEFT JOIN - slightly slower than INNER JOIN due to additional data retrieval.
+-- If a product_id is missing in Product, product_name will be NULL in the output.
+-- LEFT JOIN might be slightly slower since it includes unmatched rows.
+select p.product_name, s.year, s.price
+from Sales s
+left join Product p
+on s.product_id=p.product_id
+
+-- If all product_ids in Sales exist in Product, INNER JOIN is more efficient in both time and space.
+-- If some product_ids in Sales may not exist in Product, and we still want those rows, use LEFT JOIN.
+```
+
+[1378. Replace Employee ID With The Unique Identifier](https://leetcode.com/problems/replace-employee-id-with-the-unique-identifier/)
+
+```sql
+select eu.unique_id, e.name
+from Employees e
+left join EmployeeUNI eu
+on eu.id=e.id 
+```
+Using <code>LEFT JOIN</code> ensures that we get all employees even if they don't have a corresponding entry in the employeeuni table. In no match was found "NULL" will be retured for the unique_id.
+
+[1415 Students and Examinations](https://leetcode.com/problems/students-and-examinations/description/)
+
+```sql
+SELECT s.student_id,
+       s.student_name,
+       sub.subject_name,
+       COUNT(e.student_id) AS attended_exams
+FROM students s
+CROSS JOIN subjects sub
+LEFT JOIN examinations e
+    ON s.student_id = e.student_id
+    AND e.subject_name = sub.subject_name
+GROUP BY s.student_id, s.student_name, sub.subject_name
+ORDER BY s.student_id, sub.subject_name;
+```
+
+
+[1581. Customer Who Visited but Did Not Make Any Transactions](https://leetcode.com/problems/customer-who-visited-but-did-not-make-any-transactions/)
+
+```sql
+-- join tables and filter nulls
+select v.customer_id, count(*) as count_no_trans
+from visits v
+left join transactions t
+on v.visit_id=t.visit_id
+where t.transaction_id is null
+group by v.customer_id
+
+-- exclude visits in transactions
+-- NOT IN makes clear that we only selecting visits that are not in transactions
+select customer_id, count(*) as count_no_trans
+from visits
+where visit_id not in (select visit_id from Transactions)
+group by customer_id
+
+
+select v.customer_id, count(*) as count_no_trans
+from Visits v
+left join Transactions t
+on t.visit_id=v.visit_id
+where v.visit_id not in (select visit_id from Transactions)
+group by v.customer_id
+
+-- a more efficient query for some DBs with NOT EXISTS
+-- NOT EXISTS here: Does a transaction exists for this visit? If not, count in. 
+
+select customer_id, count(*) as count_no_trans
+from visits v
+where not exists (
+    select 1 from Transactions t where t.visit_id=v.visit_id
+)
+group by customer_id
+```
+
+## CTEs and Subqueries
+
+
 
 
 [1045. Customers Who Bought All Products](https://leetcode.com/problems/customers-who-bought-all-products/description/)
@@ -154,10 +256,141 @@ having count(distinct c.product_key) = (select count(*) from product)
 ```
 
 
+## Window Functions (Part 1)
+
+Topics:
+- ROW_NUMBER(), RANK(), DENSE_RANK()
+
+Practice:
+- Find top 3 products by revenue per category
+- First order per customer
+
+- Goal: Understand row partitioning & ordering
+
+
+```sql
+/*
+Write a query to detect duplicate records in a table and delete only the extra duplicates, keeping one copy.
+id | name | email | created_at
+- remove duplicate rows based on name and email, keeping only one row per name + email combination
+- use a CTE with the ROW_NUMBER() window function to identify duplicates
+- PARTITION BY name, email: groups rows by duplicate-defining columns
+- ROW_NUMBER(): assigns a number starting from 1 in each group 
+- the row with rn=1 is kept, rows with rn>1 are deleted 
+- DELETE FROM duplicates works in dbs that allow modifying CTEs (POSTGRES)
+- always test your deletion with a SELECT before deleting
+*/
+
+with duplicates as (
+    select *,
+        row_number() over (
+            partition by name, email
+            order by id
+        ) as rn
+    from my_table
+)
+-- select * from duplicates
+-- where rn > 1
+delete from duplicates
+where rn > 1;
+```
+
+
+[196. Delete Duplicate Emails](https://leetcode.com/problems/delete-duplicate-emails/description/)
+
+```sql
+
+/*
+- ROW_NUMBER() assigns a rank to each row per email, ordering by id.
+- You delete anything that is not the first row (i.e., not rn = 1).
+
+- using two subqueries:
+    - inner subquery:
+    select
+        id,
+        row_number() over (partition by email order by id) as rn
+    from person
+    - this subquery gives each row a number within its group of duplicate emails ordered by smallest id first:
+    | id | rn | email                                         | (implied) group: email        |
+    | -- | -- | --------------------------------------------- | ----------------------------- |
+    | 1  | 1  | [john@example.com](mailto:john@example.com)   | ← keep (first row for "john") |
+    | 3  | 2  | [john@example.com](mailto:john@example.com)   | ← delete                      |
+    | 2  | 1  | [bob@example.com](mailto:bob@example.com)     | ← keep                        |
+    | 4  | 1  | [alice@example.com](mailto:alice@example.com) | ← keep                        |
+    | 5  | 2  | [alice@example.com](mailto:alice@example.com) | ← delete                      |
+
+    - outer subquery:
+    select id
+    from (
+        -- the ranked table above
+    ) as ranked
+    where rn = 1
+    - this subquery selects only the ids with the rn = 1 - the first occurence of each unique email: 1,2,4
+
+- DELETE any rows not in the list of ids from the outer subquery: 1,2,4  
+
+*/
+
+delete from person
+where id not in (
+    select id
+    from (
+            select
+                id,
+                row_number() over (partition by email order by id) as rn
+            from
+                person
+    )
+    where rn = 1
+)
+
+
+delete from person
+where id not in (
+    select
+        min(id)
+    from person
+    group by email)
+
+
+
+with min_ids as (
+    select min(id) as keep_id
+    from person
+    group by email
+)
+delete from person
+where id not in (
+    select keep_id
+    from min_ids
+)
+
+-- Snowflake-Specific Considerations:
+--  No DELETE with JOIN: Snowflake does not support DELETE with JOIN like in SQL Server or MySQL.
+--  CTEs are materialized efficiently in Snowflake. So using a CTE isn't a bad idea.
+--  NOT IN with NULLs can be problematic just like in other DBs, but NOT EXISTS is generally better.
+--  MERGE or QUALIFY are often more performant in Snowflake for deduplication.
+-- rank rows by email and keep only the first on eper email
+```
+
+
+## Window Functions (Part 2)
+
+Topics:
+- LEAD(), LAG(), SUM() OVER, AVG() OVER
+
+Practice:
+- Calculate 7-day rolling averages
+- Compare current vs previous order amount
+
+- Goal: Answer time-series and behavioral pattern questions
 
 
 
 [180. Consecutive Numbers](https://leetcode.com/problems/consecutive-numbers/description/)
+
+```sql
+
 /*
 LAG(), LEAD() – window functions, access values from previous or next rows.
 */
@@ -407,92 +640,6 @@ select tweet_id from Tweets where length(content)>15
 select tweet_id
 from tweets
 where char_length(content) > 15;
-```
-
-[1068. Product Sales Analysis I](https://leetcode.com/problems/product-sales-analysis-i/)
-
-```sql
--- INNER JOIN retrieves only matching rows from both tables.
-select p.product_name, s.year, s.price
-from Product p
-join Sales s
-on p.product_id=s.product_id
-order by s.year 
-
--- LEFT JOIN - slightly slower than INNER JOIN due to additional data retrieval.
--- If a product_id is missing in Product, product_name will be NULL in the output.
--- LEFT JOIN might be slightly slower since it includes unmatched rows.
-select p.product_name, s.year, s.price
-from Sales s
-left join Product p
-on s.product_id=p.product_id
-
--- If all product_ids in Sales exist in Product, INNER JOIN is more efficient in both time and space.
--- If some product_ids in Sales may not exist in Product, and we still want those rows, use LEFT JOIN.
-```
-
-[1378. Replace Employee ID With The Unique Identifier](https://leetcode.com/problems/replace-employee-id-with-the-unique-identifier/)
-
-```sql
-select eu.unique_id, e.name
-from Employees e
-left join EmployeeUNI eu
-on eu.id=e.id 
-```
-Using <code>LEFT JOIN</code> ensures that we get all employees even if they don't have a corresponding entry in the employeeuni table. In no match was found "NULL" will be retured for the unique_id.
-
-[1415 Students and Examinations](https://leetcode.com/problems/students-and-examinations/description/)
-
-```sql
-SELECT s.student_id,
-       s.student_name,
-       sub.subject_name,
-       COUNT(e.student_id) AS attended_exams
-FROM students s
-CROSS JOIN subjects sub
-LEFT JOIN examinations e
-    ON s.student_id = e.student_id
-    AND e.subject_name = sub.subject_name
-GROUP BY s.student_id, s.student_name, sub.subject_name
-ORDER BY s.student_id, sub.subject_name;
-```
-
-
-[1581. Customer Who Visited but Did Not Make Any Transactions](https://leetcode.com/problems/customer-who-visited-but-did-not-make-any-transactions/)
-
-```sql
--- join tables and filter nulls
-select v.customer_id, count(*) as count_no_trans
-from visits v
-left join transactions t
-on v.visit_id=t.visit_id
-where t.transaction_id is null
-group by v.customer_id
-
--- exclude visits in transactions
--- NOT IN makes clear that we only selecting visits that are not in transactions
-select customer_id, count(*) as count_no_trans
-from visits
-where visit_id not in (select visit_id from Transactions)
-group by customer_id
-
-
-select v.customer_id, count(*) as count_no_trans
-from Visits v
-left join Transactions t
-on t.visit_id=v.visit_id
-where v.visit_id not in (select visit_id from Transactions)
-group by v.customer_id
-
--- a more efficient query for some DBs with NOT EXISTS
--- NOT EXISTS here: Does a transaction exists for this visit? If not, count in. 
-
-select customer_id, count(*) as count_no_trans
-from visits v
-where not exists (
-    select 1 from Transactions t where t.visit_id=v.visit_id
-)
-group by customer_id
 ```
 
 [197. Rising Temperature](https://leetcode.com/problems/rising-temperature/)
@@ -952,53 +1099,6 @@ GROUP BY month, country;
 ```
 
 
-[196. Delete Duplicate Emails](https://leetcode.com/problems/delete-duplicate-emails/description/)
-
-```sql
-
-delete from person
-where id not in (
-    select min(id)
-    from person
-    group by email)
-
-
-with min_ids as (
-    select min(id) as keep_id from person group by email
-)
-delete from person
-where id not in (select keep_id from min_ids)
-
-
--- Snowflake-Specific Considerations:
---  No DELETE with JOIN: Snowflake does not support DELETE with JOIN like in SQL Server or MySQL.
---  CTEs are materialized efficiently in Snowflake. So using a CTE isn't a bad idea.
---  NOT IN with NULLs can be problematic just like in other DBs, but NOT EXISTS is generally better.
---  MERGE or QUALIFY are often more performant in Snowflake for deduplication.
-
--- rank rows by email and keep only the first on eper email
-
-delete from person
-where id not in (
-    select id
-    from (
-        select
-            id,
-            row_number() over (partition by email order by id) as rn
-        from
-            person
-    )
-    where rn = 1
-)
-
-/*
-- ROW_NUMBER() assigns a rank to each row per email, ordering by id.
-- You delete anything that is not the first row (i.e., not rn = 1).
-- Uses window function optimization in Snowflake.
-- Snowflake executes this very efficiently thanks to its MPP (massively parallel processing) engine.
-*/
-
-```
 
 
 [1484. Group Sold Products By The Date](https://leetcode.com/problems/group-sold-products-by-the-date/description/)
