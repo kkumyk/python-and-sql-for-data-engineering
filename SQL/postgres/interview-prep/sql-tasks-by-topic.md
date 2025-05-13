@@ -260,12 +260,38 @@ having count(distinct c.product_key) = (select count(*) from product)
 
 Topics:
 - ROW_NUMBER(), RANK(), DENSE_RANK()
+- all ranking window functions
+- assign a number to each row to each row within a partition (e.g.: per customer, product, category)
+- use PARTITION BY to group rows logically (like GROUP BY)
+- use ORDER BY to define how to rank the rows
 
 Practice:
 - Find top 3 products by revenue per category
 - First order per customer
 
 - Goal: Understand row partitioning & ordering
+
+### ROW_NUMBER()
+- assigns a unique suquential number to each row
+- no ties: every row will get a different rank even if the value is equal
+
+#### Use Cases
+- deduplicate rows: keep the latest row per group
+- get the first or latest record per group
+- paginate data
+
+Example:
+
+```sql
+SELECT *
+FROM (
+  SELECT *,
+         ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY order_date DESC) AS rn
+  FROM orders
+) AS ranked_orders
+WHERE rn = 1;
+
+```
 
 
 ```sql
@@ -372,6 +398,136 @@ where id not in (
 --  MERGE or QUALIFY are often more performant in Snowflake for deduplication.
 -- rank rows by email and keep only the first on eper email
 ```
+
+
+### RANK()
+
+Skippes numbers after a tie:
+- when multiple rows tie (have the same value), they get the same rank, but the next rank will be skipped
+-e.g.: 
+    - Alice is highest: Rank = 1
+    - Bob and Carol both earn 900 → tie, so both get Rank = 2
+    - The next rank is 4, not 3 — because 2 was used twice, so 3 is skipped
+- assigns the same rank to tied values
+- skips numbers after ties leaving gaps in assigned rankings
+
+#### Use Cases
+- show rankings (e.g.: leaderboard)
+- highlight top-N items, allowing for ties
+
+Example:
+
+```sql
+/*
+- use RANK() to rank products by revenue within each category
+- if two products have the same revenue, they will share the same rank
+- important if you want to include all top performance
+*/
+
+SELECT *
+FROM (
+  SELECT product_id,
+         category,
+         SUM(price * quantity) AS revenue,
+         RANK() OVER (PARTITION BY category ORDER BY SUM(price * quantity) DESC) AS rnk
+  FROM sales
+  GROUP BY product_id, category
+) t
+WHERE rnk <= 3;
+```
+
+
+[550. Game Play Analysis IV](https://leetcode.com/problems/game-play-analysis-iv/description/)
+
+```sql
+/*
+Find the fraction of players that logged in again on the day after the day they first logged in:
+- find users that logged in for at least two consecutive days starting from their first login date
+- divide that number by the total number of players
+- (player_id, event_date) is the primary key
+
+Activity table:
++-----------+-----------+------------+--------------+
+| player_id | device_id | event_date | games_played |
+
+Output: 
++-----------+
+| fraction  |
++-----------+
+| 0.33      |
++-----------+ 
+
+select
+    player_id,
+    event_date,
+    rank() over (partition by player_id order by event_date) as rnk,
+    lag(event_date) over (partition by player_id order by event_date) as prev_date
+from activity 
+
+outputs:
+| player_id | event_date | rnk | prev_date  |
+| --------- | ---------- | --- | ---------- |
+| 1         | 2016-03-01 | 1   | null       |
+| 1         | 2016-03-02 | 2   | 2016-03-01 |
+| 2         | 2017-06-25 | 1   | null       |
+| 3         | 2016-03-02 | 1   | null       |
+| 3         | 2018-07-03 | 2   | 2016-03-02 |
+*/
+
+-- using rank and lag window functions
+
+with ranked_activity as (
+select
+    player_id,
+    event_date,
+    rank() over (partition by player_id order by event_date) as rnk,
+    lag(event_date) over (partition by player_id order by event_date) as prev_date
+from activity
+),
+consecutive_day_users as (
+    select distinct player_id
+    from ranked_activity
+    where rnk = 2 and event_date = prev_date + interval '1 day'
+),
+total_users as (
+    select count(distinct player_id) as total_user
+    from activity
+),
+active_users as (
+    select count(*) as active_user
+    from consecutive_day_users
+)
+select
+    round(cast(active_user as decimal)/ total_user , 2) as fraction
+from active_users, total_users
+
+-- using interval to match the consecutive day
+
+with total_players as (
+    select
+        count(distinct player_id) as total_user
+    from activity
+),
+active_consecutive as (
+    select
+        count(distinct player_id) as active_user
+    from activity a
+    where (player_id, event_date) in (
+        select
+            player_id, min(event_date) + interval '1 day'
+        from activity a
+        group by player_id
+    )
+)
+select
+    round(cast(active_user as decimal) / total_user, 2) as fraction
+from active_consecutive, total_players
+```
+
+
+
+
+
 
 
 ## Window Functions (Part 2)
@@ -536,53 +692,6 @@ where order_date = (
 
 
 ```
-
-
-[550. Game Play Analysis IV](https://leetcode.com/problems/game-play-analysis-iv/description/)
-
-```sql
-with cte as (
-    select
-        count(distinct player_id) as active_user
-    from (
-        select *,
-            rank() over (partition by player_id order by event_date asc) as rank,
-            lag(event_date) over(partition by player_id order by event_date asc) as lag_date
-            from activity) as x where x.rank <=2 and event_date = lag_date + interval '1 day'),
-cte2 as (select
-            count(distinct player_id) as total_user
-            from activity)
-select ROUND(active_user*1.0/total_user,2) as fraction from cte,cte2
-
-
-SELECT 
-    ROUND(COUNT(*)::numeric / (SELECT COUNT(DISTINCT player_id) FROM activity), 2) AS fraction
-FROM activity a
-WHERE (player_id, event_date) IN (
-        SELECT player_id, MIN(event_date) + INTERVAL '1 day' 
-        FROM activity 
-        GROUP BY player_id
-    )
-
--- MIN(event_date) is the first log date
--- MIN(event_date) + INTERVAL '1 day' finds the next day's log
-
-WITH total_players AS (
-    SELECT COUNT(DISTINCT player_id) AS total_user
-    FROM activity
-),
-active_consecutive AS (
-    SELECT COUNT(DISTINCT player_id) AS active_user
-    FROM activity a
-    WHERE (player_id, event_date) IN (
-        SELECT player_id, MIN(event_date) + INTERVAL '1 day'
-        FROM activity
-        GROUP BY player_id
-    )
-)
-SELECT ROUND(active_user::numeric / total_user, 2) AS fraction
-FROM active_consecutive, total_players;
-
 
 
 [595. Big Countries](https://leetcode.com/problems/big-countries/)
