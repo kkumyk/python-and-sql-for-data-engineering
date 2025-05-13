@@ -595,8 +595,34 @@ group by a.category
 order by a.category
 ```
 
-WIP
-[626. Exchange Seats](https://leetcode.com/problems/exchange-seats/description/?envType=study-plan-v2&envId=top-sql-50)
+
+[626. Exchange Seats](https://leetcode.com/problems/exchange-seats/description/)
+
+```sql
+/*
+- use a CASE statement with a MAX(id) subquery to handle the case when the number of students is odd
+- this avoids assigning a non-existing ID to the las student and keeps the logic clean
+
+odd-numbered rows:
+    - id % 2 = 1
+    - try id + 1 ONLY if that id exists
+even-numbered rows:
+    - swap to id - 1 always safe
+
+the final else id is a fallback - for safety of logic clarity
+*/
+
+select
+    case
+        when id % 2 = 1 and id + 1 <= (select max(id) from seat) then id + 1
+        when id % 2 = 0 then id - 1
+        else id
+    end as id,
+    student
+from seat
+order by id;
+```
+
 
 
 
