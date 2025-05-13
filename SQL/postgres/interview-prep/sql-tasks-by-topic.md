@@ -527,9 +527,6 @@ from active_consecutive, total_players
 
 
 
-
-
-
 ## Window Functions (Part 2)
 
 Topics:
@@ -562,6 +559,7 @@ select distinct num as ConsecutiveNums
 from numbered_logs
 where num = prev_num and num = next_num
 ```
+
 
 ## UNION and UNION ALL
 
@@ -1824,10 +1822,45 @@ FROM teacher
 
 
 
+[https://leetcode.com/problems/movie-rating/description/](https://leetcode.com/problems/movie-rating/description/)
 
 
+```sql
+
+/*
+
+*/
+-- SELECT
+--     name,
+--     max_rate,
+--     RANK() OVER (PARTITION BY max_rate ORDER BY name) AS counts
+-- FROM (
+--     SELECT
+--         u.name AS name,
+--         COUNT(*) AS max_rate
+--     FROM
+--         MovieRating m
+--     LEFT JOIN Users u ON m.user_id = u.user_id
+--     GROUP BY u.name
+-- ) AS user_rating_counts
+-- ORDER BY max_rate
+
+SELECT name
+FROM (
+    SELECT
+        u.name,
+        COUNT(*) AS rating_count,
+        RANK() OVER (ORDER BY COUNT(*) DESC, u.name ASC) AS rnk
+    FROM
+        MovieRating m
+    JOIN Users u ON m.user_id = u.user_id
+    GROUP BY u.name
+) ranked_users
+WHERE rnk = 1;
 
 
+        
+```
 
 
 
