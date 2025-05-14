@@ -599,8 +599,6 @@ from active_consecutive, total_players
 ```
 
 
-
-
 ## Window Functions (Part 2)
 
 Topics:
@@ -617,9 +615,29 @@ Practice:
 [180. Consecutive Numbers](https://leetcode.com/problems/consecutive-numbers/description/)
 
 ```sql
+-- using self-joins
+
+select distinct l1.num as ConsecutiveNums
+from Logs l1
+join Logs l2 on l1.id = l2.id + 1 and l2.num = l1.num
+join Logs l3 on l2.id = l3.id + 1 and l3.num = l2.num
 
 /*
 LAG(), LEAD() – window functions, access values from previous or next rows.
+
+- patteern-matching problem with window functions
+- define CTE to make logic readable and nums listed next to each other:
+| num | prev_num | next_num |
+| --- | -------- | -------- |
+| 1   | null     | 1        |
+| 1   | 1        | 1        |
+| 1   | 1        | 2        |
+| 2   | 1        | 1        |
+| 1   | 2        | 2        |
+| 2   | 1        | 2        |
+| 2   | 2        | null     |
+
+- in the outer query, filter rows where num is = to prev and next nums
 */
 
 with numbered_logs as (
@@ -632,7 +650,14 @@ with numbered_logs as (
 select distinct num as ConsecutiveNums
 from numbered_logs
 where num = prev_num and num = next_num
+
+
+
+
 ```
+
+
+
 
 
 ## UNION and UNION ALL
@@ -831,13 +856,6 @@ Using ROUND(..., 3) with Explicit Casting
 
 -->
 
-
-
-
-
-<hr>
-
-## Revision Completed
 
 [1757. Recyclable and Low Fat Products](https://leetcode.com/problems/recyclable-and-low-fat-products/)
 
