@@ -403,12 +403,12 @@ where id not in (
 ### RANK()
 
 Skippes numbers after a tie:
+- assigns the same rank to tied values
 - when multiple rows tie (have the same value), they get the same rank, but the next rank will be skipped
 -e.g.: 
     - Alice is highest: Rank = 1
     - Bob and Carol both earn 900 → tie, so both get Rank = 2
     - The next rank is 4, not 3 — because 2 was used twice, so 3 is skipped
-- assigns the same rank to tied values
 - skips numbers after ties leaving gaps in assigned rankings
 
 #### Use Cases
@@ -435,6 +435,80 @@ FROM (
 ) t
 WHERE rnk <= 3;
 ```
+
+
+[https://leetcode.com/problems/movie-rating/description/](https://leetcode.com/problems/movie-rating/description/)
+
+
+```sql
+
+/*
+- find the user who has rated the most movies
+- if there’s a tie, return the name that comes first alphabetically
+- join users and movie ratings on user_id to associate each rating with the user's name
+- group by user name to get the total number of ratings each user submitted using COUNT(*)
+- use the RANK() window function to rank users:
+- desc by the counts of ratings so that users with most ratings come first
+- asc by by name to break ties alphabetically
+- choose RANK() over ROW_NUMBERS() to handle possible ties - RANK() gives the same gives the same rank to tied users
+- tieds users - users with the same values
+- wrap the ranked results in a subquery and filter to only top user
+- the subquery handles the tie in a way so that if two or more users have the same highest rank,
+- only the one with the alphabetically smaller name is kept due to order by clause in the RANK()
+- we use RANK() without PARTITION BY because we want to calculate global rankacross all users
+- in the subquery we are trying to find the user who has rated the most movies overall, not the most within any subgroup
+- if we user PARTITION BY, it would reset the rank within each group >>> it would assign rank 1 to each user because each user is their own group
+- we reserve PARTITION BY for situations where we want rankings within each group , e.g.: per department, country, product category
+
+-- Why not MAX()
+RANK() allows to multiple users if needed and it scales if we would want to see top 3 users
+
+*/
+
+with avg_rating as (
+select
+    title,
+    AVG(rating) AS avg_rating,
+    rank() over (order by avg(rating) desc, title asc) as rnk
+from (
+    select
+        m.title as title,
+        r.created_at as created_at,
+        r.rating as rating
+    from MovieRating r
+    left join Movies m
+    on m. movie_id = r.movie_id
+    where date_trunc('month', r.created_at) = date '2020-02-01'
+    group by m.title, r.created_at, r.rating
+) as ranked_movies
+group by title
+),
+top_user as (
+    select name
+from (
+    select
+        u.name,
+        count(*) as nr_ratings,
+        rank() over ( order by count(*) desc, u.name asc) as rnk
+    from MovieRating m
+    left join Users u
+    on m.user_id = u.user_id
+    group by u.name
+) as ranked_users
+where rnk = 1
+)
+select
+    name as results
+from top_user
+union all
+select title
+from avg_rating
+where rnk = 1
+        
+```
+
+
+
 
 
 [550. Game Play Analysis IV](https://leetcode.com/problems/game-play-analysis-iv/description/)
@@ -1822,45 +1896,6 @@ FROM teacher
 
 
 
-[https://leetcode.com/problems/movie-rating/description/](https://leetcode.com/problems/movie-rating/description/)
-
-
-```sql
-
-/*
-
-*/
--- SELECT
---     name,
---     max_rate,
---     RANK() OVER (PARTITION BY max_rate ORDER BY name) AS counts
--- FROM (
---     SELECT
---         u.name AS name,
---         COUNT(*) AS max_rate
---     FROM
---         MovieRating m
---     LEFT JOIN Users u ON m.user_id = u.user_id
---     GROUP BY u.name
--- ) AS user_rating_counts
--- ORDER BY max_rate
-
-SELECT name
-FROM (
-    SELECT
-        u.name,
-        COUNT(*) AS rating_count,
-        RANK() OVER (ORDER BY COUNT(*) DESC, u.name ASC) AS rnk
-    FROM
-        MovieRating m
-    JOIN Users u ON m.user_id = u.user_id
-    GROUP BY u.name
-) ranked_users
-WHERE rnk = 1;
-
-
-        
-```
 
 
 
