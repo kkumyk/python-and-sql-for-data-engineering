@@ -823,20 +823,48 @@ select name, population, area from World where area>=3000000 or population>=2500
 ```
 
 
+
+
+
+
 [1661. Average Time of Process per Machine](https://leetcode.com/problems/average-time-of-process-per-machine/)
 ```sql
-SELECT  machine_id,
-        ROUND(
-            AVG(
-            CASE 
-                WHEN activity_type = 'start' THEN -timestamp 
-                ELSE timestamp
-            END)::decimal * 2
-            , 3) AS processing_time
-FROM Activity
-GROUP BY machine_id
-ORDER BY machine_id ASC;
+
+/*
+
+CTE result:
+
+| machine_id | process_id | duration           |
+| ---------- | ---------- | ------------------ |
+| 0          | 0          | 0.808              |
+| 0          | 1          | 0.98               |
+| 1          | 0          | 1                  |
+| 1          | 1          | 0.99               |
+| 2          | 0          | 0.4119999999999999 |
+| 2          | 1          | 2.5                |
+*/
+
+with duration_time as (
+select
+    machine_id,
+    process_id,
+    max(case when activity_type = 'end' then timestamp end) -
+    min(case when activity_type = 'start' then timestamp end) as duration
+from activity
+group by machine_id, process_id
+order by machine_id, process_id
+)
+select
+    machine_id,
+    round(avg(duration::decimal), 3) as processing_time
+from duration_time
+group by machine_id
 ```
+
+
+
+
+
 
 <!-- This query is more concise and might execute faster because it avoids a self-join and processes the data in a single pass.
 It uses a CASE statement within an aggregate function (AVG) to compute the average processing time directly. 
@@ -862,6 +890,7 @@ Using ROUND(..., 3) with Explicit Casting
 ```sql
 select product_id from Products where low_fats = 'Y' and recyclable = 'Y'
 ```
+
 
 [584. Find Customer Referee](https://leetcode.com/problems/find-customer-referee/description/)
 
