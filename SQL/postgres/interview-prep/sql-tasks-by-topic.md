@@ -1453,22 +1453,24 @@ Why this is best:
 
 ```sql
 
+-- Solution 1
+
 with daily_amount as (
     select
         visited_on,
-        sum(amount) as day_sum
+        sum(amount) as daily_spend
     from customer
     group by visited_on
 ),
-moving_avg as (
+moving_average as (
     select
         visited_on,
-        sum(day_sum) over (rows between 6 preceding and current row) as amount,
-        round(avg(day_sum) over (order by visited_on rows between 6 preceding and current row), 2) as average_amount
+        sum(daily_spend) over (rows between 6 preceding and current row ) as amount,
+        round(avg(daily_spend) over (order by visited_on rows between 6 preceding and current row), 2) as average_amount
     from daily_amount
 )
 select *
-from moving_avg
+from moving_average
 where visited_on >= (
     select min(visited_on) + interval '6 days'
     from daily_amount
@@ -1476,19 +1478,29 @@ where visited_on >= (
 order by visited_on;
 
 
-WITH day_sum_table AS (
-    SELECT  visited_on, SUM(amount) AS day_sum
-    FROM Customer
-    GROUP BY visited_on
-    ORDER BY visited_on
+-- Solution 2
+
+
+with daily_amount as (
+    select
+        visited_on,
+        sum(amount) as daily_spend
+    from customer
+    group by visited_on
+    order by visited_on
 )
+select
+    visited_on,
+    sum(daily_spend) over (rows between 6 preceding and current row) as amount,
+    round( avg(daily_spend) over (order by visited_on rows between 6 preceding and current row) , 2) as average_amount
+from
+    daily_amount
+offset 6 -- skips the first six rows of the result*
 
-SELECT visited_on,
-SUM(day_sum) OVER (ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) as amount,
-ROUND(AVG(day_sum) OVER (ROWS BETWEEN 6 PRECEDING AND CURRENT ROW), 2) as average_amount
+/*
 
-FROM day_sum_table
-OFFSET 6
+*/
+
 ```
 
 
