@@ -651,9 +651,6 @@ select distinct num as ConsecutiveNums
 from numbered_logs
 where num = prev_num and num = next_num
 
-
-
-
 ```
 
 
@@ -1498,14 +1495,74 @@ from
 offset 6 -- skips the first six rows of the result*
 
 /*
-
+- in a seven day moving average the first six days won't have enough data to calculate a full seven day average
+- we set OFFSET 6 to skip incomplete windows in a moving average calculation
 */
 
 ```
+[602. Friend Requests II: Who Has the Most Friends](https://leetcode.com/problems/friend-requests-ii-who-has-the-most-friends/description/)
+
+```sql
+
+with ra as (
+    select
+        requester_id as id,
+        count(accepter_id) as friends
+    from RequestAccepted
+    group by requester_id
+),
+ar as (
+    select
+        accepter_id as id,
+        count(requester_id) as friends
+    from RequestAccepted
+    group by accepter_id
+),
+raw_friends as (
+select *
+from ar
+union all
+select *
+from ra
+)
+select
+    id,
+    sum(friends) as num
+from raw_friends
+group by id
+order by num desc, id
+limit 1
+
+```
+
+[1164. Product Price at a Given Date](https://leetcode.com/problems/product-price-at-a-given-date/description/)
+
+```sql
+
+with latest_before as (
+    select
+        product_id,
+        new_price,
+        row_number() over (
+            partition by product_id
+            order by change_date desc
+        ) as rn
+    from products
+    where change_date <= '2019-08-16'
+)
+select
+    p.product_id,
+    coalesce(l.new_price, 10) as price
+from ( -- all products
+    select distinct product_id
+    from products
+    ) as p
+left join latest_before as l
+on p.product_id = l.product_id and l.rn = 1
+order by p.product_id;
 
 
-
-
+```
 
 
 
