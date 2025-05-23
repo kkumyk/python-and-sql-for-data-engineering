@@ -2007,7 +2007,7 @@ SELECT
 FROM teacher
 
 ```
-[Quiz]( https://www.sqlzoo.net/wiki/Using_Null_Quiz)
+
 
 
 
@@ -2084,23 +2084,23 @@ FROM teacher
 
 
 
-
-
-
-
-
-
-
-
-
+[176. Second Highest Salary](https://leetcode.com/problems/second-highest-salary/description/)
 
 
 ```sql
 
-/*
+select
+    max(salary) as SecondHighestSalary
+from Employee
+where salary < (select max(salary) from Employee);
 
-*/
 
-
-        
+with highest_salary as (
+    select
+        max(salary) as max_salary
+    from Employee
+)
+select max(salary) as SecondHighestSalary
+from Employee
+where salary < (select max_salary from highest_salary);
 ```
