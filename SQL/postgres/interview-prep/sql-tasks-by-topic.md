@@ -2122,3 +2122,36 @@ and (lat, lon) in (
     having count(*) = 1
 )
 ```
+
+[1327. List the Products Ordered in a Period](https://leetcode.com/problems/list-the-products-ordered-in-a-period/description/)
+
+```sql
+with total_feb_units as (
+    select
+        product_id,
+        sum(unit) as total_units
+    from orders
+    where to_char(order_date, 'YYYY-MM') = '2020-02'
+    -- where order_date >= '2020-02-01' and order_date < '2020-03-01' 
+    group by product_id
+    having sum(unit) >= 100
+)
+select
+    p.product_name,
+    t.total_units as unit
+from total_feb_units t 
+join products p
+on p.product_id = t.product_id;
+
+
+select
+    product_name,
+    sum(unit) as unit
+from orders o
+inner join products
+using(product_id)
+where to_char(order_date, 'YYYY-MM') = '2020-02'
+group by product_id, product_name
+having sum(unit) >= 100;
+
+```
