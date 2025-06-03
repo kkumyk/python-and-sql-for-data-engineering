@@ -2083,28 +2083,6 @@ FROM teacher
 - also try <code>GROUP BY 1 ORDER BY 2</code>
 
 
-
-[176. Second Highest Salary](https://leetcode.com/problems/second-highest-salary/description/)
-
-
-```sql
-
-select
-    max(salary) as SecondHighestSalary
-from Employee
-where salary < (select max(salary) from Employee);
-
-
-with highest_salary as (
-    select
-        max(salary) as max_salary
-    from Employee
-)
-select max(salary) as SecondHighestSalary
-from Employee
-where salary < (select max_salary from highest_salary);
-```
-
 [585. Investments in 2016](https://leetcode.com/problems/investments-in-2016/description/)
 
 ```sql
@@ -2153,5 +2131,75 @@ using(product_id)
 where to_char(order_date, 'YYYY-MM') = '2020-02'
 group by product_id, product_name
 having sum(unit) >= 100;
+```
+
+[176. Second Highest Salary](https://leetcode.com/problems/second-highest-salary/description/)
+
+```sql
+
+-- 1. MAX(salary) WHERE salary < (SELECT MAX(salary))
+
+select
+    max(salary) as SecondHighestSalary
+from Employee
+where salary < 
+    (select max(salary) from Employee);
+
+
+with highest_salary as (
+    select
+        max(salary) as max_salary
+    from Employee
+)
+select max(salary) as SecondHighestSalary
+from Employee
+where salary <
+    (select max_salary from highest_salary);
+
+
+-- 2. LIMIT + MIN + CASE
+select
+    case
+        when count(salary) > 1
+        then min(salary) 
+        else null 
+    end as SecondHighestSalary
+from
+    (select distinct salary
+    from Employee
+    order by salary desc
+    limit 2);
+
+
+select
+    case
+        when count(*) > 1 then min(salary)
+        else null
+    end as SecondHighestSalary
+from
+    (select distinct salary
+    from Employee
+    order by salary desc
+    limit 2);
+
+
+-- 3. ROW_NUMBER() 
+
+
+
+
+
+
+
+
+
+-- 	DENSE_RANK() — slower than ROW_NUMBER() with large data
+-- 	Nested MAX queries — clear, but does 2 subqueries
+-- 	NOT IN — safe but less optimal if many duplicates
+-- 	RANK() — less efficient due to gaps
+-- 	Self-join — correct but costly
+-- 	Correlated subquery — readable, but performance can degrade
+-- 	CTE with window function — adds complexity, but useful modularly
+-- 	GROUP BY + LIMIT combo — works, but has more operations than needed
 
 ```
