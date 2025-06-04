@@ -2185,6 +2185,65 @@ from
 
 -- 3. ROW_NUMBER() 
 
+select salary as SecondHighestSalary
+from (
+    select
+        salary,
+        row_number() over (order by salary desc) as rn
+    from (
+        select distinct salary from Employee
+        ) as distinct_salaries
+    ) as ranked_orders
+where rn = 2
+
+union all
+
+select null
+    where not exists (
+        select 1
+        from (
+            select distinct salary from Employee
+        ) as temp
+        offset 1
+);
+
+/*
+| Step | Description                                                                                  |
+| ---- | -------------------------------------------------------------------------------------------- |
+| 1️  | **FROM (SELECT DISTINCT salary FROM Employee)** — Get unique salaries                        |
+| 2️  | **OFFSET 1** — Skip the first row (highest salary), start from the second one                |
+| 3️  | **SELECT 1 FROM ...** — Try to fetch something starting from the second row                  |
+| 4️  | **NOT EXISTS (...)** — Check if step 3 returned anything.                                    |
+| 5️  | **WHERE NOT EXISTS (...)** — If no rows were returned in step 3, this condition is TRUE      |
+| 6️  | **SELECT NULL** — Only executed if `WHERE` condition is TRUE, i.e., **no second row exists** |
+*/
+
+-- 4. DENSE_RANK()
+-- slower than ROW_NUMBER() with large data
+-- perfect when salaries can be duplicated
+
+select
+    max(salary) as SecondHighestSalary
+from (
+    select salary, dense_rank() over (order by salary desc) as rnk
+    from Employee
+) where rnk = 2;
+
+
+-- 5. MAX with < and Nested MAX queries — clear, but does 2 subqueries
+
+select max(salary) as SecondHighestSalary
+from Employee
+where salary < (
+    select max(salary) from Employee);
+
+
+select salary as SecondHighestSalary
+from (
+    select max(salary) as salary
+    from Employee
+    where salary < (select max(salary) from Employee)
+);
 
 
 
@@ -2193,8 +2252,16 @@ from
 
 
 
--- 	DENSE_RANK() — slower than ROW_NUMBER() with large data
--- 	Nested MAX queries — clear, but does 2 subqueries
+
+
+
+
+
+
+
+
+
+
 -- 	NOT IN — safe but less optimal if many duplicates
 -- 	RANK() — less efficient due to gaps
 -- 	Self-join — correct but costly
