@@ -2246,6 +2246,58 @@ from (
 );
 
 
+-- 6. NOT IN
+/*
+- a scalar subquery returns exactly one value - a single row and column ->
+- as a result it can be used as a constant in expressions and filters:
+- select max(salary) from employee; use it in:
+- where salary < (select max(salary) from employee)
+- the query below finds the max salary that is not the highest - the second highest
+- Postgres handles NOT IN (SELECT ...) correctly as long the subquery does not include NULL
+- And since MAX(salary) only returns a single non-null value or nothing if the table is empty, it's safe to us.
+- If there is only on distinct salary, e.g.: all salaries are 100, the subquery returns 100 and 
+- WHERE salary NOT IN (100) will filter out all rows
+- as a result, MAX(salary) from the outer subquery is computed over no rows which will result in NULL
+- meaning that there is no second highest salary
+- MAX(salary) never returns NULL unless the table is empty
+*/
+
+select max(salary) as SecondHighestSalary
+from Employee
+where salary not in (
+    select max(salary) from Employee
+);
+
+
+-- 7. RANK() — less efficient due to gaps
+
+/*
+- need to use DISTINCT: since RANK() counts row positions, duplicate salaries will shift ranks even though they are the sale value
+- to find the second highest distinct salary, we need to eliminate duplicates first when using RANK 
+*/
+
+select max(salary) as SecondHighestSalary
+from (
+    select
+        salary,
+        rank() over (order by salary desc) as rnk
+    from (select distinct salary from employee)
+)
+where rnk = 2;
+
+
+-- 8. Self-join — correct but costly
+
+/*
+- simple way to avoid window funcions
+- can be inefficient for large datasets: it's a self-join, meaning time complexity is O(n²) in worst case
+- PostgreSQL may need to compare many salary pairs
+*/
+
+select max(e2.salary) as SecondHighestSalary
+from employee e1
+join employee e2
+on e2.salary < e1.salary; 
 
 
 
@@ -2259,12 +2311,6 @@ from (
 
 
 
-
-
-
--- 	NOT IN — safe but less optimal if many duplicates
--- 	RANK() — less efficient due to gaps
--- 	Self-join — correct but costly
 -- 	Correlated subquery — readable, but performance can degrade
 -- 	CTE with window function — adds complexity, but useful modularly
 -- 	GROUP BY + LIMIT combo — works, but has more operations than needed
