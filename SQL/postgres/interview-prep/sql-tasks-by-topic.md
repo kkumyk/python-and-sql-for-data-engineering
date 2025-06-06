@@ -2285,10 +2285,8 @@ from (
 )
 where rnk = 2;
 
+/* 8. Self-join — correct but costly
 
--- 8. Self-join — correct but costly
-
-/*
 - simple way to avoid window funcions
 - can be inefficient for large datasets: it's a self-join, meaning time complexity is O(n²) in worst case
 - PostgreSQL may need to compare many salary pairs
@@ -2300,6 +2298,58 @@ join employee e2
 on e2.salary < e1.salary; 
 
 
+/* 9. Correlated subquery — readable, but performance can degrade
+- correlated subquery - subquery that uses values from the outer query and runs once per row
+- correlated subquery is a well- established concept in SQL development
+- correlated subqueries are powerful but slower for larger datasets because they are re-evaluated once per row
+- the query below counts how many salaries are greater than each one and selecting the one where exactly one is greater
+- this query has a terrible runtime - very slow
+*/
+
+-- main query
+select distinct salary as SecondHighestSalary
+from employee e1
+where 1 = (
+    -- the subquery below counts how many distinct salaries are greater than the current e1.salary
+    select count(distinct salary)
+    from employee e2
+    where e2.salary > e1.salary
+)
+
+union all
+
+select null as SecondHighestSalary
+where not exists (
+    select 1
+    from (
+        select distinct salary
+        from employee
+        offset 1
+    )
+)
+
+/*
+PostgreSQL generally executes SQL in this order:
+
+    FROM
+
+    WHERE
+
+    GROUP BY
+
+    HAVING
+
+    SELECT
+
+    DISTINCT
+
+    ORDER BY
+
+    LIMIT / OFFSET
+
+    UNION / UNION ALL
+    
+*/
 
 
 
@@ -2308,11 +2358,9 @@ on e2.salary < e1.salary;
 
 
 
-
-
-
--- 	Correlated subquery — readable, but performance can degrade
 -- 	CTE with window function — adds complexity, but useful modularly
 -- 	GROUP BY + LIMIT combo — works, but has more operations than needed
+
+
 
 ```
