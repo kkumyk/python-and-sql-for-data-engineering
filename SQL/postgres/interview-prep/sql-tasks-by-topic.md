@@ -2157,6 +2157,15 @@ where salary <
     (select max_salary from highest_salary);
 
 
+select max(salary) as SecondHighestSalary
+from (
+    select max(salary) as salary
+    from employee
+    group by salary
+    order by salary desc
+    offset 1
+);
+
 -- 2. LIMIT + MIN + CASE
 select
     case
@@ -2330,37 +2339,37 @@ where not exists (
 
 /*
 PostgreSQL generally executes SQL in this order:
-
     FROM
-
     WHERE
-
     GROUP BY
-
     HAVING
-
     SELECT
-
     DISTINCT
-
     ORDER BY
-
     LIMIT / OFFSET
-
     UNION / UNION ALL
-    
 */
 
+-- 10. GROUP BY + LIMIT combo — works, but has more operations than needed
 
+select salary as SecondHighestSalary
+from (
+    select distinct salary
+    from employee
+    order by salary desc
+    limit 1 offset 1
+)
 
+union all
 
-
-
-
-
--- 	CTE with window function — adds complexity, but useful modularly
--- 	GROUP BY + LIMIT combo — works, but has more operations than needed
-
-
+select null as SecondHighestSalary
+where not exists (
+    select 1
+    from (
+        select distinct salary
+        from employee
+        offset 1
+    )
+);
 
 ```
