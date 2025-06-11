@@ -7,29 +7,6 @@
 - "give me the rows that exist in both tables"
 - returns only the rows where it is a match in both tables based on a conditions - a common key
 
-[570. Managers with at Least 5 Direct Reports](https://leetcode.com/problems/managers-with-at-least-5-direct-reports/description/)
-
-```sql
-/*
-Write a solution to find managers with at least five direct reports:
-- each employee has a managerId referencing another employee's id >>> use self-join
-- alias e for the employee and m for the manager - this way each row will contain the manager name and the name of manager's report
-- to count the number of employees per manager - group by both - m.name and e.managerId; group by both fields because m.name might not be unique - two people might share the same name > so e.managerId ensures accurate grouping on the manager's unique ID.
-- use HAVING to filter aggregates after grouping:
-- find those groups where the manager has 5 or more direct reports
-- HAVING is used to filter aggregate functions like count()
-*/
-
-select
-    m.name
-from
-    Employee e
-join Employee m
-on m.id = e.managerId
-group by m.name, e.managerId
-having count(e.managerId) >= 5
-```
-
 
 [1070. Product Sales Analysis III](https://leetcode.com/problems/product-sales-analysis-iii/description/)
 
@@ -2371,5 +2348,93 @@ where not exists (
         offset 1
     )
 );
+
+```
+
+
+[570. Managers with at Least 5 Direct Reports](https://leetcode.com/problems/managers-with-at-least-5-direct-reports/description/)
+
+```sql
+/*
+Write a solution to find managers with at least five direct reports:
+- each employee has a managerId referencing another employee's id >>> use self-join
+- alias e for the employee and m for the manager - this way each row will contain the manager name and the name of manager's report
+- to count the number of employees per manager - group by both - m.name and e.managerId; group by both fields because m.name might not be unique - two people might share the same name > so e.managerId ensures accurate grouping on the manager's unique ID.
+- use HAVING to filter aggregates after grouping:
+- find those groups where the manager has 5 or more direct reports
+- HAVING is used to filter aggregate functions like count()
+*/
+
+select
+    m.name
+from
+    Employee e
+join Employee m
+on m.id = e.managerId
+group by m.name, e.managerId
+having count(e.managerId) >= 5
+
+-- GROUP BY managerId and join back
+
+select m.name
+from (
+    select managerId
+    from employee
+    group by managerId
+    having count(*) >= 5
+) as mgr
+join employee m on m.id = mgr.managerId;
+
+-- Use CTE: functionally same as prev query, but using a CTE improves clarity for large/complex queries
+
+with mgr_count as (
+    select managerId
+    from employee
+    group by managerId
+    having count(*) >= 5
+)
+select m.name
+from mgr_count
+join employee m on m.id = mgr_count.managerId;
+
+
+-- Use a Subquery in the WHERE clause
+
+select name
+from employee
+where id in (
+    select managerId
+    from employee
+    group by managerId
+    having count(*) >= 5
+);
+
+
+-- EXISTS with correlated subquery
+
+/* Order Execution:
+
+1. Scan employee as m
+2. For each m, run subquery:
+    Filter employees e where e.managerId = m.id
+    Group by managerId
+    Check if COUNT(*) >= 5
+3. If subquery returns a row, EXISTS is true
+    - If yes, the subquery returns a row (with just a 1, doesn’t matter what), which makes EXISTS true.
+    - If not, returns no rows, and EXISTS is false.
+
+4. If EXISTS is true, output m.name
+*/
+
+select m.name
+from employee m
+where exists (
+    select 1
+    from employee e
+    where m.id = e.managerId
+    group by e.managerId
+    having count(*) >= 5
+);
+
 
 ```
