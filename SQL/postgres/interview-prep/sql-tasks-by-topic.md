@@ -2358,13 +2358,17 @@ where not exists (
 /*
 Write a solution to find managers with at least five direct reports:
 - each employee has a managerId referencing another employee's id >>> use self-join
-- alias e for the employee and m for the manager - this way each row will contain the manager name and the name of manager's report
-- to count the number of employees per manager - group by both - m.name and e.managerId; group by both fields because m.name might not be unique - two people might share the same name > so e.managerId ensures accurate grouping on the manager's unique ID.
+- alias e for the employee and m for the manager - this way each row will contain 
+the manager name and the name of manager's report
+- to count the number of employees per manager - group by both - m.name and e.managerId;
+- group by both fields because m.name might not be unique - two people might share the same name >
+ so e.managerId ensures accurate grouping on the manager's unique ID.
 - use HAVING to filter aggregates after grouping:
 - find those groups where the manager has 5 or more direct reports
 - HAVING is used to filter aggregate functions like count()
 */
 
+-- 1. JOIN, GROUP BY and HAVING
 select
     m.name
 from
@@ -2372,9 +2376,10 @@ from
 join Employee m
 on m.id = e.managerId
 group by m.name, e.managerId
-having count(e.managerId) >= 5
+having count(e.managerId) >= 5;
 
--- GROUP BY managerId and join back
+
+-- 2. GROUP BY managerId and join back
 
 select m.name
 from (
@@ -2385,7 +2390,8 @@ from (
 ) as mgr
 join employee m on m.id = mgr.managerId;
 
--- Use CTE: functionally same as prev query, but using a CTE improves clarity for large/complex queries
+
+-- 3. Use CTE: functionally same as prev query, but using a CTE improves clarity for large/complex queries
 
 with mgr_count as (
     select managerId
@@ -2395,10 +2401,11 @@ with mgr_count as (
 )
 select m.name
 from mgr_count
-join employee m on m.id = mgr_count.managerId;
+join employee m
+on m.id = mgr_count.managerId;
 
 
--- Use a Subquery in the WHERE clause
+-- 4. Use a Subquery in the WHERE clause
 
 select name
 from employee
@@ -2410,20 +2417,19 @@ where id in (
 );
 
 
--- EXISTS with correlated subquery
+-- 5. EXISTS with correlated subquery
 
 /* Order Execution:
-
-1. Scan employee as m
-2. For each m, run subquery:
-    Filter employees e where e.managerId = m.id
-    Group by managerId
-    Check if COUNT(*) >= 5
-3. If subquery returns a row, EXISTS is true
-    - If yes, the subquery returns a row (with just a 1, doesn’t matter what), which makes EXISTS true.
-    - If not, returns no rows, and EXISTS is false.
-
-4. If EXISTS is true, output m.name
+    1. Scan employee as m
+    2. For each m, run subquery:
+        Filter employees e where e.managerId = m.id
+        Group by managerId
+        Check if COUNT(*) >= 5
+    3. If subquery returns a row, EXISTS is true
+        - If yes, the subquery returns a row (with just a 1, doesn’t matter what),
+        which makes EXISTS true.
+        - If not, returns no rows, and EXISTS is false.
+    4. If EXISTS is true, output m.name
 */
 
 select m.name
@@ -2436,5 +2442,17 @@ where exists (
     having count(*) >= 5
 );
 
+-- 6. Derived table with COUNT + JOIN (slight variation)
+    -- avoid filtering in HAVING
+
+select m.name
+from employee m
+join (
+    select managerId, count(*) as emp_count
+    from employee
+    group by managerId
+) as nr_emps
+on m.id = nr_emps.managerId
+where nr_emps.emp_count >= 5;
 
 ```
