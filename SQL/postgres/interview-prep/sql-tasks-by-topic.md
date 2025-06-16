@@ -216,22 +216,6 @@ where not exists (
 group by customer_id
 ```
 
-## CTEs and Subqueries
-
-
-
-
-[1045. Customers Who Bought All Products](https://leetcode.com/problems/customers-who-bought-all-products/description/)
-
-```sql
-select 
-c.customer_id as customer_id
-from customer c
-group by c.customer_id
-having count(distinct c.product_key) = (select count(*) from product)
-
-```
-
 
 ## Window Functions (Part 1)
 
@@ -864,34 +848,6 @@ Using ROUND(..., 3) with Explicit Casting
 ```sql
 select product_id from Products where low_fats = 'Y' and recyclable = 'Y'
 ```
-
-
-[584. Find Customer Referee](https://leetcode.com/problems/find-customer-referee/description/)
-
-In SQL, the != (or <>) operator does not compare NULL values because NULL represents an unknown value. In SQL, any comparison with NULL results in NULL (which is treated as unknown or false in a WHERE clause).
-
-If referee_id is NULL, the condition becomes NULL != 2, which results in NULL.
-Since SQL ignores NULL in WHERE conditions (it is neither TRUE nor FALSE), rows where referee_id is NULL are not included in the result.
-
-To handle NULL values in comparisons, use IS NULL or IS NOT NULL explicitly.
-
-```sql
-select name from Customer where referee_id != 2 or referee_id is null
-```
-
-[1148. Article Views I](https://leetcode.com/problems/article-views-i/)
-
-```sql
-select author_id as id from Views where author_id=viewer_id group by id order by id
-
-select distinct author_id id from Views where author_id=viewer_id order by author_id
-
-select author_id as id
-from Views
-where author_id=viewer_id
-group by author_id
-```
-
 
 [1683. Invalid Tweets](https://leetcode.com/problems/invalid-tweets/)
 ```sql
@@ -2454,5 +2410,52 @@ join (
 ) as nr_emps
 on m.id = nr_emps.managerId
 where nr_emps.emp_count >= 5;
+
+```
+
+
+[1045. Customers Who Bought All Products](https://leetcode.com/problems/customers-who-bought-all-products/description/)
+
+```sql
+select customer_id
+from customer
+group by customer_id
+having count(distinct product_key) = (select count(product_key) from product)
+```
+
+
+
+[1148. Article Views I](https://leetcode.com/problems/article-views-i/)
+
+```sql
+select author_id as id from Views where author_id=viewer_id group by id order by id
+
+select distinct author_id id from Views where author_id=viewer_id order by author_id
+
+select author_id as id
+from Views
+where author_id=viewer_id
+group by author_id
+```
+
+
+
+[584. Find Customer Referee](https://leetcode.com/problems/find-customer-referee/description/)
+
+In SQL, the != (or <>) operator does not compare NULL values because NULL represents an unknown value. In SQL, any comparison with NULL results in NULL (which is treated as unknown or false in a WHERE clause).
+
+If referee_id is NULL, the condition becomes NULL != 2, which results in NULL.
+Since SQL ignores NULL in WHERE conditions (it is neither TRUE nor FALSE), rows where referee_id is NULL are not included in the result.
+
+To handle NULL values in comparisons, use IS NULL or IS NOT NULL explicitly.
+
+```sql
+select name
+from Customer
+where referee_id != 2 or referee_id is null;
+
+select name
+from customer
+where referee_id is null or referee_id != 2;
 
 ```
